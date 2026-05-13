@@ -1,0 +1,51 @@
+---
+title: "FAQ"
+description: "Common questions and how Atomic compares to adjacent tools."
+icon: "circle-question"
+---
+
+## Why not markdown, a coding agent alone, or a general agent framework?
+
+Markdown is great for guidance: conventions, commands, repo notes. Use Claude Code, OpenCode, or Copilot CLI directly for normal single-session coding.
+
+Reach for Atomic at the point where the work needs **branching, retries, parallel sessions, explicit state, human approval, sandboxed execution, or reliable handoff between stages**. General agent frameworks can do some of this, but you often rebuild coding-agent basics yourself: file editing, terminal interaction, MCP setup, hooks, session handling, repo-specific context. Atomic starts from production coding agents and adds the workflow layer around them.
+
+## How does Atomic differ from Spec-Kit?
+
+[Spec-Kit](https://github.com/github/spec-kit) is GitHub's spec-driven development toolkit. **Spec-Kit works well for greenfield projects with a single Copilot session. Atomic is built for the harder case** — large existing codebases where you research first, with multi-session pipelines, isolated context windows, deterministic execution, and support for Claude Code, OpenCode, and Copilot CLI.
+
+| Aspect | Spec-Kit | Atomic |
+| --- | --- | --- |
+| **Focus** | Greenfield, spec-first | Large existing codebases — research-first or spec-first |
+| **Workflow definition** | Shell scripts + markdown | TypeScript Workflow SDK with deterministic execution |
+| **Session management** | Single agent session | Multi-session pipelines, sequential and parallel, in isolated context windows |
+| **Agent support** | GitHub Copilot CLI | Claude Code + OpenCode + Copilot CLI |
+| **Sub-agents / skills** | Single general agent / none | 12 specialized sub-agents + 57 built-in skills |
+| **Autonomous execution** | Not available | Ralph — multi-hour autonomous plan/implement/review/debug loop |
+
+## How does Atomic differ from DeerFlow?
+
+[DeerFlow](https://github.com/bytedance/deer-flow) is ByteDance's general-purpose agent runtime on LangGraph. **DeerFlow is a general-purpose agent system with a web UI; Atomic is narrowly focused on coding workflows.** Atomic runs on top of production coding agents (Claude Code, OpenCode, Copilot CLI) rather than reimplementing coding tools through a generic API — you get each agent's native file editing, permissions, MCP integrations, and hooks out of the box.
+
+| Aspect | DeerFlow | Atomic |
+| --- | --- | --- |
+| **Runtime** | Python (LangGraph) | TypeScript (Bun) |
+| **Agent SDKs** | OpenAI-compatible API | Claude Code + OpenCode + Copilot CLI native SDKs |
+| **Execution** | DAG with conditional edges | Deterministic — strict step ordering, frozen definitions, controlled transcript passing |
+| **Sub-agents** | Researcher / coder / reporter | 12 specialized sub-agents with scoped tools |
+| **Interface** | Web UI (Streamlit) | Terminal chat with tmux session management |
+| **Autonomous** | Not available | Ralph — bounded plan/implement/review/debug loop |
+
+## How does Atomic differ from Hermes Agent?
+
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) is Nous Research's general-purpose AI assistant with a self-improving learning loop. **Hermes is a broad personal assistant that learns across sessions; Atomic is coding-specific workflow software for engineering teams.** Atomic encodes your dev process as deterministic TypeScript workflows that run identically across teammates, machines, and CI, and inherits production-hardened tools from Claude Code, OpenCode, and Copilot CLI (giving you two independent security boundaries: devcontainer + agent permissions).
+
+| Aspect | Hermes Agent | Atomic |
+| --- | --- | --- |
+| **Focus** | Personal AI assistant (coding + messaging + smart home) | Coding-specific multi-session workflows for teams |
+| **Runtime** | Python | TypeScript (Bun) |
+| **Agent SDKs** | OpenAI-compatible adapter | Claude Code + OpenCode + Copilot CLI native SDKs |
+| **Execution** | Single conversation loop with context compression | Multi-session pipelines, fresh context per session, controlled transcript passing |
+| **Skills** | Auto-created (may drift) | 57 developer-authored, version-controlled skills |
+| **Reproducibility** | Different paths each run | Frozen workflow definitions run identically across machines and CI |
+| **Security** | Command approval + container backends | Devcontainer isolation + coding agent permission systems (two independent boundaries) |

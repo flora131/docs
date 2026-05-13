@@ -1,0 +1,37 @@
+---
+title: "Runnable examples"
+description: "Small, complete user apps that demonstrate each SDK primitive."
+icon: "play"
+---
+
+The Atomic repo ships small complete user apps under [`examples/`](https://github.com/flora131/atomic/tree/main/examples). Each example has `claude-worker.ts`, `copilot-worker.ts`, and `opencode-worker.ts` — small Commander entrypoints that call `runWorkflow({ workflow, inputs })`.
+
+| Example | What it demonstrates |
+| --- | --- |
+| `hello-world` | Minimal single-session workflow with structured inputs. |
+| `sequential-describe-summarize` | Two stages passing data via `s.save()` → `s.transcript(handle)`. |
+| `parallel-hello-world` | `Promise.all()` fan-out and transcript merge. |
+| `headless-test` | Visible seed → 3 parallel headless stages → visible merge. |
+| `hil-favorite-color` | Human-in-the-loop prompt mid-workflow. |
+| `structured-output-demo` | Per-SDK structured output (JSON-schema validation, Zod). |
+| `review-fix-loop` | Draft → loop (review → fix) with bounded iterations and early exit. |
+| `multi-workflow` | Two Claude workflows under one `cli.ts` via `listWorkflows(registry)`. |
+| `commander-embed` | Mount an Atomic workflow under a parent Commander CLI. |
+| `pane-navigation` | Driver CLI for the SDK pane-navigation primitives. |
+
+Each directory has its own `README.md` with the run command and explanation.
+
+## Run an example
+
+```bash
+git clone https://github.com/flora131/atomic
+cd atomic/examples/<example-name>
+bun install
+bun run <agent>-worker.ts --<input>=<value>
+```
+
+Replace `<agent>` with `claude`, `copilot`, or `opencode`, and pass any inputs the workflow declares.
+
+<Tip>
+The examples are the fastest way to learn the SDK by reading code. Pair them with [`defineWorkflow`](/sdk/define-workflow), [stages](/sdk/stages), and [inputs](/sdk/inputs) for the API reference.
+</Tip>

@@ -27,6 +27,8 @@
               "concepts/why-atomic",
               "concepts/cli-vs-sdk",
               "concepts/workflows",
+              "concepts/skills",
+              "concepts/sub-agents",
               "concepts/sessions",
               "concepts/agents",
               "concepts/permissions"
@@ -55,6 +57,13 @@
               "configuration/agent-files",
               "configuration/ci"
             ]
+          },
+          {
+            "group": "Help",
+            "pages": [
+              "troubleshooting",
+              "faq"
+            ]
           }
         ]
       },
@@ -65,7 +74,8 @@
             "group": "Overview",
             "pages": [
               "sdk/overview",
-              "sdk/host-local-workflows"
+              "sdk/host-local-workflows",
+              "sdk/examples"
             ]
           },
           {
