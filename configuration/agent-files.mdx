@@ -1,0 +1,61 @@
+---
+title: "Agent files"
+description: "How Atomic reads and writes .claude, .opencode, and .github configuration."
+icon: "folder-tree"
+---
+
+Each supported agent keeps its own configuration directory at the repo root. Atomic reads from and writes to these directories — it doesn't replace them.
+
+| Agent | Folder | Skills | Context file |
+| --- | --- | --- | --- |
+| Claude Code | `.claude/` | `.claude/skills/` (symlink → `.agents/skills/`) | `CLAUDE.md` |
+| OpenCode | `.opencode/` | `.agents/skills/` | `AGENTS.md` |
+| GitHub Copilot | `.github/` | `.agents/skills/` | `AGENTS.md` |
+
+All three agents share the **same skill set** via `.agents/skills/`. Claude Code accesses them through a `.claude/skills/` symlink; OpenCode and Copilot CLI read them directly.
+
+## Context files
+
+`CLAUDE.md` and `AGENTS.md` are project-context files — conventions, layout, commands, repo notes. Generate them with `/init` inside `atomic chat -a <agent>`:
+
+```bash
+atomic chat -a claude
+# > /init
+```
+
+See [context files](/cli/context-files).
+
+## Skills
+
+Skills are structured capability modules — `.agents/skills/<name>/SKILL.md` plus any supporting files. Atomic ships 57 skills across development, context engineering, frontend design, evaluation, documents, git/SCM, and meta categories. They're auto-invoked by the agent when relevant.
+
+Run `ls .agents/skills/` for the complete list on disk.
+
+## SCM-related MCP servers
+
+Setting `scm` in [settings.json](/configuration/settings) reconciles GitHub / Azure DevOps MCP servers across each agent's config on every `atomic chat` / `atomic workflow` startup:
+
+| Agent | Reconciled file |
+| --- | --- |
+| Claude Code | `.claude/settings.json` (`disabledMcpjsonServers`) |
+| OpenCode | `.opencode/opencode.json` (`mcp.<server>.enabled`) |
+| Copilot CLI | `--disable-mcp-server <name>` appended to invocation (no on-disk MCP toggle) |
+
+The GitHub and Azure DevOps MCP servers are **disabled by default** to avoid consuming tokens on projects that don't need them. Set `scm` to `github`, `azure-devops`, or `sapling` to opt in. `sapling` disables both servers everywhere.
+
+## Provider overrides
+
+Override chat flags or env vars per agent in [settings.json](/configuration/settings#providers-example):
+
+```jsonc
+{
+  "providers": {
+    "claude": {
+      "chatFlags": ["--model", "claude-sonnet-4-6"],
+      "envVars": { "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "16384" }
+    }
+  }
+}
+```
+
+`chatFlags` replaces defaults entirely; `envVars` is merged.

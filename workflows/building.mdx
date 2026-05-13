@@ -1,0 +1,126 @@
+---
+title: "Building a workflow"
+description: "Author your first workflow with the SDK — define, stage, run."
+icon: "hammer"
+---
+
+Every team has a process — code review, CI checks, PR creation, approval, merge. Encode it as TypeScript once; everyone runs the same pipeline.
+
+<Tip>
+Don't want to write the TypeScript yourself? Inside `atomic chat`, ask the agent to use the `workflow-creator` skill: *"Use your workflow-creator skill to create a workflow that plans, implements, and reviews a feature."* It generates a `defineWorkflow()` file you can refine.
+</Tip>
+
+## 1. Set up the project
+
+```bash
+bun init && bun add @bastani/atomic-sdk
+```
+
+The SDK runs on **[Bun](https://bun.sh/)** — not Node.js. You also need a multiplexer (tmux on macOS/Linux, psmux on Windows) and at least one authenticated agent CLI. See [installation](/installation).
+
+## 2. Define the workflow
+
+Put the workflow in `src/workflows/<name>/<agent>.ts`:
+
+```ts
+// src/workflows/review-to-merge/claude.ts
+import { defineWorkflow } from "@bastani/atomic-sdk/workflows";
+
+export default defineWorkflow({
+  name: "review-to-merge",
+  description: "Review → CI → PR → Notify → Approve → Merge",
+})
+  .for("claude")
+  .run(async (ctx) => {
+    // 1. Review
+    const review = await ctx.stage({ name: "review" }, {}, {}, async (s) => {
+      await s.session.query("Review uncommitted changes for correctness, security, style.");
+      s.save(s.sessionId);
+    });
+
+    // 2. Security + CI in parallel
+    await Promise.all([
+      ctx.stage({ name: "security-scan" }, {}, {}, async (s) => {
+        await s.session.query("Run `bun audit` and scan for leaked secrets.");
+        s.save(s.sessionId);
+      }),
+      ctx.stage({ name: "ci-checks" }, {}, {}, async (s) => {
+        await s.session.query("Run `bun lint` and `bun test`. Report failures.");
+        s.save(s.sessionId);
+      }),
+    ]);
+
+    // 3. Open PR, then wait for human approval, then merge
+    await ctx.stage({ name: "notify-and-merge" }, {}, {}, async (s) => {
+      const t = await s.transcript(review);
+      await s.session.query(`Read ${t.path}. Open a PR summarizing the changes.`);
+      await s.session.query(
+        "Ask the user to confirm approval, then merge with `gh pr merge --squash`.",
+        { allowedTools: ["Bash", "Read", "AskUserQuestion"] },
+      );
+      s.save(s.sessionId);
+    });
+  })
+  .compile();
+```
+
+The builder is `defineWorkflow({ name, description })` → `.for(agent)` → `.run(async ctx => {...})` → `.compile()`. `.compile()` is required — it freezes the workflow definition.
+
+See [define-workflow](/sdk/define-workflow) for the full builder API and [stages](/sdk/stages) for the callback surface.
+
+## 3. Wire it to a CLI
+
+The SDK ships pure primitives — no wrapper to opt into. Compose with whichever CLI library you prefer (Commander, citty, yargs, an OpenTUI app, …) and call `runWorkflow`:
+
+```ts
+// src/claude-worker.ts
+import { Command } from "@commander-js/extra-typings";
+import {
+  getInputSchema,
+  runWorkflow,
+  MissingDependencyError,
+} from "@bastani/atomic-sdk/workflows";
+import workflow from "./workflows/review-to-merge/claude.ts";
+
+const program = new Command();
+for (const input of getInputSchema(workflow)) {
+  program.option(`--${input.name} <value>`, input.description ?? "");
+}
+program.action(async (rawOpts) => {
+  try {
+    await runWorkflow({ workflow, inputs: rawOpts as Record<string, string> });
+  } catch (err) {
+    if (err instanceof MissingDependencyError) {
+      console.error(`Missing dependency: ${err.dependency}. Install it and retry.`);
+      process.exit(1);
+    }
+    throw err;
+  }
+});
+await program.parseAsync();
+```
+
+## 4. Run it
+
+```bash
+bun run src/claude-worker.ts
+```
+
+That's the full shape — one workflow file, one composition root.
+
+## Next steps
+
+<Columns cols={2}>
+  <Card title="SDK overview" icon="code" href="/sdk/overview">
+    Every primitive the SDK exports.
+  </Card>
+  <Card title="Stages" icon="diagram-project" href="/sdk/stages">
+    `ctx.stage`, parallel fan-out, transcript hand-offs, headless stages.
+  </Card>
+  <Card title="Inputs" icon="sliders" href="/sdk/inputs">
+    Declared input schemas and CLI flag validation.
+  </Card>
+  <Card title="Register it" icon="bookmark" href="/workflows/registering">
+    Make the workflow discoverable through `atomic workflow`.
+  </Card>
+</Columns>

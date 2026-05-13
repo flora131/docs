@@ -1,0 +1,140 @@
+---
+title: "defineWorkflow"
+description: "The builder chain — name, agent, run, compile."
+icon: "hammer"
+---
+
+`defineWorkflow` is the entry point. The chain is:
+
+```text
+defineWorkflow({ name, description, inputs?, source? })
+  .for(agent)
+  .run(async (ctx) => { ... })
+  .compile()
+```
+
+`.compile()` is **required** — it seals the workflow definition. Once compiled, step order, session names, and the execution graph are immutable.
+
+## Minimal example
+
+```ts
+import { defineWorkflow } from "@bastani/atomic-sdk/workflows";
+
+export default defineWorkflow({
+  name: "hello-world",
+  description: "A single-session hello-world workflow",
+})
+  .for("claude")
+  .run(async (ctx) => {
+    await ctx.stage({ name: "hello" }, {}, {}, async (s) => {
+      await s.session.query("Say hello in one sentence.");
+      s.save(s.sessionId);
+    });
+  })
+  .compile();
+```
+
+## With structured inputs
+
+```ts
+export default defineWorkflow({
+  name: "hello-world",
+  description: "A simple single-session hello world workflow",
+  inputs: [
+    {
+      name: "greeting",
+      type: "string",
+      required: true,
+      description: "the opening phrase the agent should echo back",
+      placeholder: "Hello, world!",
+    },
+    {
+      name: "style",
+      type: "enum",
+      required: true,
+      description: "tone of the response",
+      values: ["formal", "casual", "robotic"],
+      default: "casual",
+    },
+    {
+      name: "notes",
+      type: "text",
+      description: "extra guidance for the agent (optional)",
+    },
+  ],
+})
+  .for("claude")
+  .run(async (ctx) => {
+    const { greeting, style } = ctx.inputs;
+    const notes = ctx.inputs.notes?.trim() ?? "";
+    const base = `${greeting} Please respond with a ${style} hello-world greeting.`;
+    const prompt = notes ? `${base}\n\nAdditional guidance:\n${notes}` : base;
+
+    await ctx.stage({ name: "hello" }, {}, {}, async (s) => {
+      await s.session.query(prompt);
+      s.save(s.sessionId);
+    });
+  })
+  .compile();
+```
+
+See [inputs](/sdk/inputs) for the full `WorkflowInput` shape.
+
+## Definition fields
+
+<ParamField path="name" type="string" required>
+  Workflow name — unique within the registry.
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  Human-readable description; shown in the picker and `atomic workflow list`.
+</ParamField>
+
+<ParamField path="inputs" type="WorkflowInput[]">
+  Optional declared input schema. Each input becomes a `--<name>=<value>` CLI flag with validation. See [inputs](/sdk/inputs).
+</ParamField>
+
+<ParamField path="source" type="string">
+  Pass `import.meta.path`. The SDK uses this to re-import the workflow module inside the orchestrator child process — required when running through `atomic`'s built-in dispatcher or `hostLocalWorkflows`.
+</ParamField>
+
+<ParamField path="minSDKVersion" type="string">
+  Optional minimum SDK version. The runtime throws `IncompatibleSDKError` if the loaded SDK is older.
+</ParamField>
+
+## `.for(agent)`
+
+Pin the workflow to one agent. The agent type must be `"claude"`, `"copilot"`, or `"opencode"`. Most repos ship per-agent variants of the same workflow side-by-side:
+
+```text
+src/workflows/review-to-merge/
+  claude.ts
+  copilot.ts
+  opencode.ts
+```
+
+## `.run(fn)`
+
+The body. `fn` receives a `WorkflowContext`:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `ctx.inputs` | `{ [K in N]?: string }` | Typed inputs — only declared field names are valid keys. Workflows that need a prompt must declare it in their `inputs` schema. |
+| `ctx.agent` | `AgentType` | `"claude" \| "copilot" \| "opencode"`. |
+| `ctx.stage(opts, clientOpts, sessionOpts, fn)` | `Promise<SessionHandle<T>>` | Spawn a session — returns a handle with `name`, `id`, `result`. |
+| `ctx.transcript(ref)` | `Promise<Transcript>` | Get a completed session's transcript (`{ path, content }`). |
+| `ctx.getMessages(ref)` | `Promise<SavedMessage[]>` | Get a completed session's raw native messages. |
+
+See [stages](/sdk/stages) for `ctx.stage` and the per-callback `s` surface.
+
+## `.compile()`
+
+Terminal method. Freezes the definition.
+
+| Rule |
+| --- |
+| Every workflow definition must call `.run()` **and** `.compile()`. |
+| Session names must be unique within a workflow run. |
+| `transcript()` / `getMessages()` only access completed sessions (callback returned + saves flushed). |
+| Each session runs in its own tmux window with the chosen agent. |
+| To execute, call `runWorkflow({ workflow, inputs })` from your CLI library of choice. |

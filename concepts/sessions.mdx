@@ -1,0 +1,58 @@
+---
+title: "Sessions"
+description: "Isolated, detachable tmux sessions on a dedicated socket — surviving disconnects."
+icon: "window"
+---
+
+Every `atomic chat` and every workflow stage runs inside an isolated [tmux](https://github.com/tmux/tmux) session on a dedicated `atomic` socket — your personal tmux is untouched. If your terminal disconnects, the session keeps running; reconnect anytime. On Windows the multiplexer is [psmux](https://github.com/psmux/psmux). It's auto-installed on the first non-info `atomic` command.
+
+This is what lets workflows survive terminal disconnects, what `-d` / `--detach` uses to put a run in the background, and what `atomic session connect` reattaches to from any shell.
+
+## Session names
+
+| Pattern | Used by |
+| --- | --- |
+| `atomic-chat-<id>` | `atomic chat` sessions |
+| `atomic-wf-<agent>-<workflow>-<id>` | workflow runs (e.g. `atomic-wf-claude-ralph-a1b2c3d4`) |
+
+## Managing sessions
+
+```bash
+atomic session list              # all sessions on the atomic socket
+atomic session list -a claude    # filter by agent (repeatable)
+atomic session connect           # interactive fuzzy picker
+atomic session connect <name>    # attach by name
+atomic session kill              # multi-select picker
+atomic session kill <name>       # kill one session by name
+atomic session kill --all        # preselect every matching session, then confirm
+atomic session kill --all --yes  # kill all matching sessions without prompts
+```
+
+`kill` confirms before terminating unless `-y` / `--yes` is passed.
+
+## Scoped subcommands
+
+`session` is available scoped under `chat` and `workflow`, so you can target one kind:
+
+```bash
+atomic chat session list                  # chat sessions only
+atomic chat session connect <name>
+atomic workflow session list -a copilot   # Copilot workflow sessions only
+atomic workflow session connect atomic-wf-claude-ralph-a1b2c3d4
+atomic workflow session kill -a claude --all --yes
+```
+
+## Detached mode
+
+Pass `-d` / `--detach` to start a workflow in the background — it returns immediately and prints the session name. Attach later from any shell.
+
+```bash
+atomic workflow -n ralph -a claude -d "build the auth module"   # returns immediately
+atomic workflow session connect atomic-wf-claude-ralph-<id>     # attach later
+```
+
+Detached mode is what you want for scripted / CI automation and long-running tasks — the workflow keeps running on the atomic socket regardless of your terminal.
+
+<Note>
+The SDK exposes the same session machinery as primitives — `listSessions`, `getSessionStatus`, `attachSession` / `detachSession`, `nextWindow` / `previousWindow` / `gotoOrchestrator`. See the [SDK overview](/sdk/overview).
+</Note>

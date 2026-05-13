@@ -1,0 +1,57 @@
+---
+title: "WorkflowPicker"
+description: "The interactive picker as a reusable component."
+icon: "list"
+---
+
+The interactive picker — the same one `atomic workflow -a claude` opens — is exposed as a component you can mount in your own app. Users fuzzy-search workflows, fill in declared inputs as a form, and confirm.
+
+## Import
+
+```ts
+import { WorkflowPicker } from "@bastani/atomic-sdk/workflows/components";
+```
+
+## Use it imperatively
+
+```ts
+import { WorkflowPickerPanel } from "@bastani/atomic-sdk/workflows/components";
+
+await WorkflowPickerPanel.create({
+  agent: "claude",
+  registry, // a registry built with createRegistry()
+});
+```
+
+## Use it inside an OpenTUI app
+
+Mount `WorkflowPicker` as a component inside your own OpenTUI app. It binds to the registry you pass, renders rows for each workflow, validates declared inputs against the schema, and resolves to the chosen workflow + filled inputs.
+
+```ts
+import { WorkflowPicker } from "@bastani/atomic-sdk/workflows/components";
+
+<WorkflowPicker
+  agent="claude"
+  registry={registry}
+  onSubmit={async ({ workflow, inputs }) => {
+    await runWorkflow({ workflow, inputs });
+  }}
+/>
+```
+
+{/* TODO: verify exact WorkflowPicker prop names — README documents the existence and the WorkflowPickerPanel.create(...) shape but not the full prop surface */}
+
+## Broken entries
+
+When you register custom workflows via [settings.json](/configuration/settings) and one fails to load, the picker still renders it as a broken row. Pressing Enter on a broken row flashes the reason on the statusline instead of launching the workflow. See [registering workflows](/workflows/registering#broken-entries).
+
+## See also
+
+<Columns cols={2}>
+  <Card title="Embedding" icon="puzzle-piece" href="/sdk/embedding">
+    Build a multi-workflow CLI on top of a registry.
+  </Card>
+  <Card title="Inputs" icon="sliders" href="/sdk/inputs">
+    The schema the picker renders as a form.
+  </Card>
+</Columns>

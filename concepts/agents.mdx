@@ -1,0 +1,68 @@
+---
+title: "Agents"
+description: "Multi-agent support — Claude Code, OpenCode, and GitHub Copilot CLI behind one workflow runtime."
+icon: "robot"
+---
+
+Atomic doesn't replace your coding agent. At each stage it spawns the agent's own CLI and talks to it via that agent's SDK — so file editing, tool use, MCP setup, hooks, and context handling all keep working as they do today.
+
+## Supported agents
+
+| Agent | Chat | Workflow flag |
+| --- | --- | --- |
+| Claude Code | `atomic chat -a claude` | `-a claude` |
+| OpenCode | `atomic chat -a opencode` | `-a opencode` |
+| GitHub Copilot CLI | `atomic chat -a copilot` | `-a copilot` |
+
+Each agent gets its own configuration directory (`.claude/`, `.opencode/`, `.github/`), skills, and context files — all managed by Atomic. See [agent-specific files](/configuration/agent-files).
+
+## Switching agents
+
+Use the same workflow across agents by pinning a variant in `.for(...)`:
+
+```ts
+// src/workflows/review/claude.ts
+export default defineWorkflow({ name: "review", description: "..." })
+  .for("claude")
+  .run(async (ctx) => { /* ... */ })
+  .compile();
+```
+
+```ts
+// src/workflows/review/copilot.ts
+export default defineWorkflow({ name: "review", description: "..." })
+  .for("copilot")
+  .run(async (ctx) => { /* ... */ })
+  .compile();
+```
+
+Per-agent session APIs are slightly different:
+
+| Agent | How to send a prompt |
+| --- | --- |
+| Claude | `await s.session.query(prompt)` |
+| Copilot | `await s.session.send({ prompt })` |
+| OpenCode | `await s.client.session.prompt({ sessionID: s.session.id, parts: [{ type: "text", text: prompt }] })` |
+
+See [stages](/sdk/stages) for the full callback surface.
+
+## When to use `-a` on your own CLI
+
+If your worker file imports a workflow pinned to one agent (`import workflow from "./claude/index.ts"`), there's nothing to disambiguate — no `-a` flag. Only reach for `-a/--agent` when one CLI dispatches across workflows that exist in multiple agent variants. The atomic CLI itself uses `-a` for that reason: its built-in registry has cross-agent variants of `ralph`, `deep-research-codebase`, and `open-claude-design`.
+
+## Agent reference
+
+<Columns cols={2}>
+  <Card title="Claude Code" icon="anthropic" href="/agents/claude-code/cli/cli-reference">
+    Claude Code CLI reference.
+  </Card>
+  <Card title="OpenCode" icon="terminal" href="/agents/opencode/server">
+    OpenCode server reference.
+  </Card>
+  <Card title="GitHub Copilot CLI" icon="github" href="/agents/copilot-cli/usage">
+    Copilot CLI usage reference.
+  </Card>
+  <Card title="Permissions" icon="shield-halved" href="/concepts/permissions">
+    How Atomic bypasses prompts in workflows — and why that means containerization.
+  </Card>
+</Columns>

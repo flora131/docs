@@ -1,0 +1,168 @@
+---
+title: "Inputs"
+description: "Declared input schemas, CLI flag validation, and input precedence."
+icon: "sliders"
+---
+
+Declare an `inputs` array on `defineWorkflow` and:
+
+- The CLI materialises one `--<field>=<value>` flag per declared input.
+- Required-field, enum-membership, integer, and unknown-flag validation runs **before** any session spawns.
+- The interactive picker renders the same schema as a form.
+- Your worker's composition root iterates the schema via `getInputSchema(workflow)` to register the same flags one-for-one.
+
+## Declaring inputs
+
+```ts
+import { defineWorkflow } from "@bastani/atomic-sdk/workflows";
+
+export default defineWorkflow({
+  name: "gen-spec",
+  description: "Convert a research doc into an execution spec",
+  inputs: [
+    {
+      name: "research_doc",
+      type: "string",
+      required: true,
+      description: "path to the research doc",
+      placeholder: "research/docs/2026-04-11-auth.md",
+    },
+    {
+      name: "focus",
+      type: "enum",
+      required: true,
+      description: "how aggressively to scope the spec",
+      values: ["minimal", "standard", "exhaustive"],
+      default: "standard",
+    },
+    {
+      name: "notes",
+      type: "text",
+      description: "extra guidance for the spec writer (optional)",
+    },
+    {
+      name: "max_iterations",
+      type: "integer",
+      default: 3,
+      description: "review/fix rounds before giving up",
+    },
+  ],
+})
+  .for("claude")
+  .run(async (ctx) => {
+    const { research_doc, focus } = ctx.inputs;
+    const notes = ctx.inputs.notes ?? "";
+    /* ... */
+  })
+  .compile();
+```
+
+Run it with CLI flags:
+
+```bash
+bun run src/claude-worker.ts \
+  --research_doc=research/docs/2026-04-11-auth.md \
+  --focus=standard
+```
+
+## `WorkflowInput` shape
+
+<ParamField path="name" type="string" required>
+  Field name. Used as the object key on `ctx.inputs` and as the CLI flag (`--<name>`).
+</ParamField>
+
+<ParamField path="type" type='"string" | "text" | "enum" | "integer"' required>
+  - `string` — single-line text input.
+  - `text` — multi-line text input.
+  - `enum` — one of `values[]`.
+  - `integer` — whole number; coerced from the string flag.
+</ParamField>
+
+<ParamField path="required" type="boolean">
+  When `true`, the input must be provided (unless it has a `default` or, for `enum`, the first declared value is used).
+</ParamField>
+
+<ParamField path="default" type="string | number">
+  Default value applied when no value is provided.
+</ParamField>
+
+<ParamField path="values" type="string[]">
+  Required when `type: "enum"`. The set of allowed values.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Used in CLI flag help, picker form labels, and `atomic workflow inputs <name>` output.
+</ParamField>
+
+<ParamField path="placeholder" type="string">
+  Placeholder text shown in the picker form.
+</ParamField>
+
+## Reading inputs in the workflow
+
+Only declared field names are valid keys on `ctx.inputs`. Accessing an undeclared field is a compile-time error.
+
+```ts
+.run(async (ctx) => {
+  const focus = ctx.inputs.focus;            // "minimal" | "standard" | "exhaustive" | undefined
+  const notes = ctx.inputs.notes ?? "";      // optional
+  // ctx.inputs.nope                         // ❌ compile error
+});
+```
+
+## Inspecting the schema at runtime
+
+`getInputSchema(workflow)` returns the declared `WorkflowInput[]`. Use it to register CLI flags one-for-one:
+
+```ts
+import { Command } from "@commander-js/extra-typings";
+import { getInputSchema, runWorkflow } from "@bastani/atomic-sdk/workflows";
+import workflow from "./workflows/gen-spec/claude.ts";
+
+const program = new Command();
+for (const input of getInputSchema(workflow)) {
+  program.option(`--${input.name} <value>`, input.description ?? "");
+}
+program.action(async (rawOpts) => {
+  await runWorkflow({ workflow, inputs: rawOpts as Record<string, string> });
+});
+await program.parseAsync();
+```
+
+## `validateInputs`
+
+`runWorkflow` calls `validateInputs(workflow, raw)` for you. You can call it directly when you need to validate before doing anything else:
+
+```ts
+import { validateInputs } from "@bastani/atomic-sdk/workflows";
+
+const validated = validateInputs(workflow, rawOpts);
+```
+
+It applies:
+
+1. `defineWorkflow` default values when no value is provided.
+2. The first declared `values[]` entry when `required: true && type: "enum"` and no value is provided.
+3. Whatever the caller passed in `raw`.
+
+## Input precedence
+
+CLI flags compose entirely at the calling-CLI layer — the SDK only sees the final `inputs` map. The atomic CLI applies this order:
+
+1. Workflow-declared defaults.
+2. Required-enum first value.
+3. Whatever the user passes (positional `prompt`, `--<field>` flags, picker form).
+
+## Inspecting a workflow's schema from the CLI
+
+```bash
+atomic workflow inputs gen-spec -a claude
+```
+
+Prints the declared schema as JSON — useful for scripting and for the picker.
+
+## Patterns
+
+- **Positional prompt** — declare an input named `prompt` to accept `atomic workflow -n my-wf -a claude "the prompt"`.
+- **Human-in-the-loop** — see `examples/hil-favorite-color/` for asking the user mid-workflow.
+- **Structured output** — see `examples/structured-output-demo/` for JSON-schema-validated outputs per SDK.

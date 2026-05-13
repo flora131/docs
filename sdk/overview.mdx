@@ -1,0 +1,80 @@
+---
+title: "SDK overview"
+description: "@bastani/atomic-sdk/workflows — pure primitives for authoring, registering, and running workflows."
+icon: "code"
+---
+
+`@bastani/atomic-sdk/workflows` is a **library of pure primitives** — there's no wrapper to opt into. You compose the primitives into whatever CLI shape you want (Commander, citty, yargs, an OpenTUI app, anything else). Both the `atomic` CLI and your own worker files call the same primitives underneath.
+
+## Install
+
+```bash
+bun init -y
+bun add @bastani/atomic-sdk
+bun add @anthropic-ai/claude-agent-sdk     # the provider SDK you target
+```
+
+The SDK runs on **Bun**, not Node.js. You also need a multiplexer (tmux on macOS/Linux, psmux on Windows) and at least one authenticated agent CLI (`claude`, `opencode`, or `copilot`). See [installation](/installation#sdk-only).
+
+The SDK is fully standalone — it bundles its own orchestrator dispatcher and never reaches into a sibling `@bastani/atomic` package.
+
+## Primitives
+
+| Primitive | Purpose |
+| --- | --- |
+| `defineWorkflow` | Author a workflow with `.for(agent).run(...).compile()`. Pass `source: import.meta.path` for dispatch. |
+| `createRegistry` | Build an immutable registry of workflows for iteration / lookup. |
+| `listWorkflows(reg)` | Snapshot every workflow in a registry. |
+| `getWorkflow(reg, …)` | Resolve `(agent, name)` → workflow. |
+| `getName` / `getAgent` / `getInputSchema` / `getDescription` / `getSource` / `getMinSDKVersion` | Read workflow metadata. |
+| `validateInputs(wf, raw)` | Run the same validation pipeline `atomic` uses (required, defaults, enum, integer). |
+| `runWorkflow({ workflow, inputs, detach?, pathToAtomicExecutable? })` | Spawn the orchestrator session and (optionally) attach. Resolves with `{ id, tmuxSessionName }`. |
+| `hostLocalWorkflows(workflows, options?)` | Make your CLI dispatchable by the `atomic` binary. See [host-local-workflows](/sdk/host-local-workflows). |
+| `listSessions` / `getSession` / `stopSession` / `attachSession` / `detachSession` | Manage running sessions on the shared atomic socket. |
+| `getSessionStatus` / `getSessionTranscript` | Read the orchestrator-written status snapshot or per-session messages from disk. |
+| `nextWindow` / `previousWindow` / `gotoOrchestrator` | Pane navigation — pure tmux verbs that update the session's current-window pointer. |
+| `MissingDependencyError` / `SessionNotFoundError` / `WorkflowNotCompiledError` / `InvalidWorkflowError` / `IncompatibleSDKError` | Typed errors thrown by the primitives above. Catch with `instanceof` for friendly CLI output. |
+
+## Stage API
+
+Inside a `.run(async ctx => { ... })`:
+
+- `ctx.inputs` — typed inputs (only declared field names are valid keys).
+- `ctx.agent` — `"claude" | "copilot" | "opencode"`.
+- `ctx.stage(opts, clientOpts, sessionOpts, fn)` — spawn a session; returns a `SessionHandle<T>` with `name`, `id`, `result`.
+- `ctx.transcript(ref)` — `{ path, content }` from a completed session.
+- `ctx.getMessages(ref)` — raw native messages from a completed session.
+
+Inside a stage callback `async s => { ... }`:
+
+- `s.client`, `s.session` — pre-created provider client and session.
+- `s.sessionId`, `s.paneId`, `s.sessionDir` — identifiers and on-disk paths.
+- `s.save(messages)` — persist this session's output for later stages.
+- `s.transcript(ref)` / `s.getMessages(ref)` — read upstream output.
+- `s.stage(opts, clientOpts, sessionOpts, fn)` — spawn a nested sub-session.
+- `headless: true` in stage options — run in-process without a tmux window.
+
+See [stages](/sdk/stages) for the full callback surface.
+
+## Where to go next
+
+<Columns cols={2}>
+  <Card title="defineWorkflow" icon="hammer" href="/sdk/define-workflow">
+    The builder chain — name, agent, run, compile.
+  </Card>
+  <Card title="Stages" icon="diagram-project" href="/sdk/stages">
+    `ctx.stage`, parallel fan-out, transcript hand-offs, headless stages.
+  </Card>
+  <Card title="Inputs" icon="sliders" href="/sdk/inputs">
+    Declared input schemas and validation.
+  </Card>
+  <Card title="runWorkflow" icon="play" href="/sdk/run-workflow">
+    The composition root pattern and embedding under a parent CLI.
+  </Card>
+  <Card title="Embedding" icon="puzzle-piece" href="/sdk/embedding">
+    Building your own atomic-powered app — registries, multi-workflow, embedding.
+  </Card>
+  <Card title="Picker" icon="list" href="/sdk/picker">
+    `WorkflowPicker` — the interactive picker as a reusable component.
+  </Card>
+</Columns>
