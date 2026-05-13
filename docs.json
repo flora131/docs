@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "Atomic",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#2563EB",
+    "light": "#89B4FA",
+    "dark": "#1D4ED8"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -17,56 +17,145 @@
             "group": "Getting started",
             "pages": [
               "index",
-              "quickstart",
-              "development"
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "concepts/why-atomic",
+              "concepts/cli-vs-sdk",
+              "concepts/workflows",
+              "concepts/sessions",
+              "concepts/agents",
+              "concepts/permissions"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Workflows",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/components",
-              "essentials/reusable-snippets"
+              "workflows/built-in",
+              "workflows/running",
+              "workflows/building",
+              "workflows/registering"
             ]
           },
           {
-            "group": "Agent ready",
+            "group": "CLI",
             "pages": [
-              "agent-ready/prompt",
-              "agent-ready/visibility",
-              "agent-ready/contextual",
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "cli/commands",
+              "cli/context-files"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/settings",
+              "configuration/agent-files",
+              "configuration/ci"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "SDK reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
-              "api-reference/introduction"
+              "sdk/overview",
+              "sdk/host-local-workflows"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Authoring workflows",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "sdk/define-workflow",
+              "sdk/stages",
+              "sdk/inputs"
+            ]
+          },
+          {
+            "group": "Running & embedding",
+            "pages": [
+              "sdk/run-workflow",
+              "sdk/embedding",
+              "sdk/picker"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Agent reference",
+        "groups": [
+          {
+            "group": "Claude Code",
+            "pages": [
+              {
+                "group": "CLI",
+                "pages": [
+                  "agents/claude-code/cli/cli-reference",
+                  "agents/claude-code/cli/hooks",
+                  "agents/claude-code/cli/permissions",
+                  "agents/claude-code/cli/skills",
+                  "agents/claude-code/cli/subagents",
+                  "agents/claude-code/cli/tools"
+                ]
+              },
+              {
+                "group": "Agent SDK",
+                "pages": [
+                  "agents/claude-code/agent-sdk/overview",
+                  "agents/claude-code/agent-sdk/quickstart",
+                  "agents/claude-code/agent-sdk/agent-loop",
+                  "agents/claude-code/agent-sdk/headless",
+                  "agents/claude-code/agent-sdk/core-concepts/sessions",
+                  "agents/claude-code/agent-sdk/core-concepts/claude-code-features",
+                  "agents/claude-code/agent-sdk/sdk-references/typescript"
+                ]
+              },
+              {
+                "group": "Agent SDK guides",
+                "pages": [
+                  "agents/claude-code/agent-sdk/guides/streaming-vs-single-mode",
+                  "agents/claude-code/agent-sdk/guides/streaming-output",
+                  "agents/claude-code/agent-sdk/guides/permissions",
+                  "agents/claude-code/agent-sdk/guides/secure-deployment",
+                  "agents/claude-code/agent-sdk/guides/hosting",
+                  "agents/claude-code/agent-sdk/guides/mcp",
+                  "agents/claude-code/agent-sdk/guides/custom-tools",
+                  "agents/claude-code/agent-sdk/guides/tool-search",
+                  "agents/claude-code/agent-sdk/guides/subagents",
+                  "agents/claude-code/agent-sdk/guides/skills",
+                  "agents/claude-code/agent-sdk/guides/slash-commands",
+                  "agents/claude-code/agent-sdk/guides/plugins",
+                  "agents/claude-code/agent-sdk/guides/hooks",
+                  "agents/claude-code/agent-sdk/guides/modifying-system-prompts",
+                  "agents/claude-code/agent-sdk/guides/structured-output",
+                  "agents/claude-code/agent-sdk/guides/user-input",
+                  "agents/claude-code/agent-sdk/guides/todo-tracking",
+                  "agents/claude-code/agent-sdk/guides/cost-tracking",
+                  "agents/claude-code/agent-sdk/guides/file-checkpointing"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "GitHub Copilot CLI",
+            "pages": [
+              "agents/copilot-cli/usage",
+              "agents/copilot-cli/sdk",
+              "agents/copilot-cli/hooks",
+              "agents/copilot-cli/skills",
+              "agents/copilot-cli/subagents"
+            ]
+          },
+          {
+            "group": "OpenCode",
+            "pages": [
+              "agents/opencode/server",
+              "agents/opencode/sdk"
             ]
           }
         ]
@@ -75,14 +164,14 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "GitHub",
+          "href": "https://github.com/flora131/atomic",
+          "icon": "github"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "DeepWiki",
+          "href": "https://deepwiki.com/flora131/atomic",
+          "icon": "book-open-cover"
         }
       ]
     }
@@ -94,33 +183,31 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "GitHub",
+        "href": "https://github.com/flora131/atomic"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Get started",
+      "href": "/installation"
     }
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/flora131/atomic"
     }
   }
 }

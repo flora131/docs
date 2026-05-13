@@ -1,0 +1,184 @@
+---
+title: "runWorkflow"
+description: "Spawn the orchestrator session, attach or detach, and embed under any parent CLI."
+icon: "play"
+---
+
+`runWorkflow` is the composition root. Call it from inside any CLI library — Commander, citty, yargs, an OpenTUI app — and a workflow runs. There is no Commander adapter, no wrapper to opt into.
+
+```ts
+import { runWorkflow } from "@bastani/atomic-sdk/workflows";
+import workflow from "./workflows/review-to-merge/claude.ts";
+
+const { id, tmuxSessionName } = await runWorkflow({
+  workflow,
+  inputs: { target_branch: "main" },
+});
+```
+
+## API
+
+```ts
+interface RunWorkflowOptions {
+  workflow: WorkflowDefinition;
+  inputs?: Record<string, string>;
+  detach?: boolean;
+  pathToAtomicExecutable?: string;
+}
+
+interface RunWorkflowResult {
+  id: string;              // session ID
+  tmuxSessionName: string; // e.g. atomic-wf-claude-review-to-merge-a1b2c3d4
+}
+
+async function runWorkflow(options: RunWorkflowOptions): Promise<RunWorkflowResult>;
+```
+
+| Option | Description |
+| --- | --- |
+| `workflow` | The compiled workflow from `defineWorkflow(...).compile()`. |
+| `inputs` | Validated against the declared `inputs` schema before any session spawns. |
+| `detach` | When `true`, return immediately after starting the orchestrator session. Equivalent to the CLI's `-d` / `--detach`. |
+| `pathToAtomicExecutable` | Override the self-exec target — see [Overriding the self-exec target](#overriding-the-self-exec-target). |
+
+## Single-workflow composition root
+
+The most common shape — one workflow, one worker file:
+
+```ts
+// src/claude-worker.ts
+import { Command } from "@commander-js/extra-typings";
+import {
+  getInputSchema,
+  runWorkflow,
+  MissingDependencyError,
+} from "@bastani/atomic-sdk/workflows";
+import workflow from "./workflows/review-to-merge/claude.ts";
+
+const program = new Command();
+for (const input of getInputSchema(workflow)) {
+  program.option(`--${input.name} <value>`, input.description ?? "");
+}
+program.action(async (rawOpts) => {
+  try {
+    await runWorkflow({ workflow, inputs: rawOpts as Record<string, string> });
+  } catch (err) {
+    if (err instanceof MissingDependencyError) {
+      console.error(`Missing dependency: ${err.dependency}. Install it and retry.`);
+      process.exit(1);
+    }
+    throw err;
+  }
+});
+await program.parseAsync();
+```
+
+Run it:
+
+```bash
+bun run src/claude-worker.ts --target_branch=release/v2
+```
+
+## Programmatic invocation
+
+`runWorkflow` is a plain async function — you don't need a CLI at all:
+
+```ts
+import { runWorkflow } from "@bastani/atomic-sdk/workflows";
+import workflow from "./workflows/review-to-merge/claude.ts";
+
+const { id, tmuxSessionName } = await runWorkflow({
+  workflow,
+  inputs: { target_branch: "main" },
+  detach: true,
+});
+```
+
+Combine with `getSessionStatus(tmuxSessionName)` and `attachSession(id)` to build your own monitoring UI.
+
+## Embedding under a parent CLI
+
+Mount a workflow under any parent Commander tree alongside plain Commander commands:
+
+```ts
+import { Command } from "@commander-js/extra-typings";
+import { getInputSchema, runWorkflow } from "@bastani/atomic-sdk/workflows";
+import workflow from "./workflows/deploy/claude.ts";
+
+const program = new Command("my-app");
+
+const deploy = program.command("deploy").description(workflow.description);
+for (const input of getInputSchema(workflow)) {
+  deploy.option(`--${input.name} <value>`, input.description ?? "");
+}
+deploy.action(async (rawOpts) => {
+  await runWorkflow({ workflow, inputs: rawOpts as Record<string, string> });
+});
+
+program.command("hello").action(() => console.log("hi"));
+
+await program.parseAsync();
+```
+
+There's no re-entry boilerplate — the SDK ships its own internal orchestrator entry script (bundled inside `@bastani/atomic-sdk`) and re-execs *that* with positional args (`workflowSource`, `agent`, base64-encoded inputs). Your CLI is never re-imported, so there's nothing to guard against orchestrator-mode env vars. `bun add @bastani/atomic-sdk` is the only dependency you need — the user-facing `@bastani/atomic` CLI is **not** a peer requirement.
+
+See `examples/commander-embed/cli.ts` for a complete runnable version.
+
+## Overriding the self-exec target
+
+By default the SDK self-execs into its own bundled dispatcher; pass `pathToAtomicExecutable` to route through a separately installed `atomic` binary instead. The shape is inspired by the Claude Agent SDK's [`pathToClaudeCodeExecutable`](https://docs.claude.com/en/agent-sdk/typescript):
+
+```ts
+await runWorkflow({
+  workflow,
+  inputs,
+  // Bare command name — resolved via PATH at exec time, e.g. when
+  // a globally installed `atomic` is on the user's PATH.
+  pathToAtomicExecutable: "atomic",
+});
+
+await runWorkflow({
+  workflow,
+  inputs,
+  // Or an absolute path to a specific binary build.
+  pathToAtomicExecutable: "/usr/local/bin/atomic",
+});
+```
+
+Set this when you have a reason to prefer a specific atomic binary (custom build, version pinning, distribution shape) — otherwise leave it unset and let the SDK use its bundled dispatcher.
+
+## Typed errors
+
+`runWorkflow` and its companions throw typed errors. Catch with `instanceof` to render friendly CLI output without parsing message text:
+
+| Error | Thrown when |
+| --- | --- |
+| `MissingDependencyError` | `tmux` / `psmux` / `bun` missing on PATH. |
+| `SessionNotFoundError` | Unknown session id passed to a session primitive. |
+| `WorkflowNotCompiledError` | A workflow was passed without `.compile()`. |
+| `InvalidWorkflowError` | Workflow file failed to load / validate. |
+| `IncompatibleSDKError` | Loaded SDK is older than the workflow's declared `minSDKVersion`. |
+
+```ts
+import {
+  runWorkflow,
+  MissingDependencyError,
+  SessionNotFoundError,
+} from "@bastani/atomic-sdk/workflows";
+
+try {
+  await runWorkflow({ workflow, inputs });
+} catch (err) {
+  if (err instanceof MissingDependencyError) {
+    console.error(`Install ${err.dependency} and retry.`);
+    process.exit(1);
+  }
+  if (err instanceof SessionNotFoundError) {
+    console.error(`No such session: ${err.sessionId}`);
+    process.exit(2);
+  }
+  throw err;
+}
+```
+
+See `examples/pane-navigation/cli.ts` for a worked example.

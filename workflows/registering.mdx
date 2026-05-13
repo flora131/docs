@@ -1,0 +1,129 @@
+---
+title: "Registering workflows"
+description: "Make your own workflows discoverable through atomic workflow."
+icon: "bookmark"
+---
+
+Custom workflows extend the `atomic` CLI with workflows defined in external commands. Once registered, they appear alongside built-ins in `atomic workflow list`, in the interactive picker, and as direct runs via `atomic workflow -n <name> -a <agent>`.
+
+## Two ways to use a workflow
+
+You don't need to register a workflow to run it — `bun run src/claude-worker.ts` always works. Register it when you want the workflow to be discoverable through `atomic workflow` (picker, list, named runs).
+
+## Register in `settings.json`
+
+Add an entry under `workflows` in `.atomic/settings.json` (project-local) or `~/.atomic/settings.json` (user-global). Each value points at an external command that exposes its workflow definition via `hostLocalWorkflows([wf])`.
+
+```jsonc
+// .atomic/settings.json
+{
+  "$schema": "https://raw.githubusercontent.com/flora131/atomic/main/assets/settings.schema.json",
+  "version": 1,
+  "workflows": {
+    "pr-review": {
+      "command": "bunx",
+      "args": ["./.atomic/workflows/pr-review/index.ts"],
+      "agents": ["claude"]
+    }
+  }
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `command` | Executable to spawn (e.g. `bunx`, `node`, an absolute path). |
+| `args` | Static arguments prepended before atomic's hidden subcommands. Defaults to `[]`. |
+| `agents` | Required. One or more of `"claude"`, `"opencode"`, `"copilot"`. Atomic registers one entry per agent listed. |
+
+## Author the workflow
+
+The recommended layout is a self-contained Bun package under `.atomic/workflows/<name>/` (or `~/.atomic/workflows/<name>/` for global) — its own `package.json`, its own `tsconfig.json`, its own `node_modules`. The entry file must end with `await hostLocalWorkflows([wf])`:
+
+```ts
+// .atomic/workflows/pr-review/index.ts
+#!/usr/bin/env bun
+import { defineWorkflow, hostLocalWorkflows } from "@bastani/atomic-sdk";
+
+const workflow = defineWorkflow({
+  name: "pr-review",
+  source: import.meta.path,
+  description: "Review the diff on the current branch",
+  inputs: [
+    { name: "target_branch", type: "string", required: true, description: "branch to diff against" },
+  ],
+})
+  .for("claude")
+  .run(async (ctx) => {
+    await ctx.stage({ name: "review" }, {}, {}, async (s) => {
+      await s.session.query(`Review changes vs ${ctx.inputs.target_branch}`);
+      s.save(s.sessionId);
+    });
+  })
+  .compile();
+
+await hostLocalWorkflows([workflow]);
+```
+
+<Note>
+`hostLocalWorkflows` is the explicit handoff. ESM evaluation is depth-first — a dependency module's body runs before its importer's body. If the SDK dispatched at module load, it would drain an empty registry before your `.compile()` line ran. Calling `await hostLocalWorkflows([wf])` after `.compile()` removes the race. See [host-local-workflows](/sdk/host-local-workflows) for the full contract.
+</Note>
+
+## Refresh and run
+
+After editing `settings.json` or any registered workflow file:
+
+```bash
+atomic workflow refresh
+```
+
+This re-spawns the metadata loader for every entry and reports loaded + broken entries with field-by-field diagnostics (`reason`, `fix`, `settings` path) on each broken-entry line. Inside an `atomic chat` session it auto-defaults to JSON.
+
+Once an entry shows as `LOADED`, invoke it:
+
+```bash
+atomic workflow -n pr-review -a claude --target_branch=main
+```
+
+## Precedence
+
+Project-local `.atomic/settings.json` > user-global `~/.atomic/settings.json` > built-in registry. When a custom workflow overrides a prior entry, Atomic writes an audit line to stderr:
+
+```
+[atomic/workflows] override: <name>/<agent> (<origin>) > <prior.kind>
+```
+
+where `<origin>` is `local` or `global` and `<prior.kind>` is `external` or `builtin`.
+
+<Warning>
+Built-in workflows (`ralph`, `deep-research-codebase`, `open-claude-design`) are reserved — a custom workflow with the same name will **not** shadow a built-in when running via the `atomic` CLI.
+</Warning>
+
+## Broken entries
+
+When an entry fails to load — schema error, missing binary, timeout, missing meta line, malformed JSON — it is tracked as a non-dispatchable broken entry on three surfaces:
+
+- **Picker** — renders as a broken row; pressing Enter flashes the reason on the statusline instead of launching.
+- **`atomic workflow list`** — lists the entry under a trailing "skipped" section with the reason.
+- **`atomic workflow -n <broken> -a <agent>`** — exits with code 2 and prints a `reason / source / fix` block to stderr.
+
+### Common diagnostics
+
+| Diagnostic | Fix |
+| --- | --- |
+| `metadata emission timed out — ensure the third-party CLI invokes hostLocalWorkflows([…]) after compile()` | Add `await hostLocalWorkflows([wf])` after `.compile()` in the CLI pointed to by `command`. |
+| `expected ATOMIC_WORKFLOW_META line` | Add `await hostLocalWorkflows([wf])` after `.compile()` and confirm the package imports `@bastani/atomic-sdk`. |
+| `command "<cmd>" not found on PATH` | Install the package or use an absolute path in `command`. |
+| `command did not register a workflow for agent "<agent>"` | Add a `.for("<agent>")` branch in the CLI's `defineWorkflow` call. |
+
+## Reference
+
+<Columns cols={2}>
+  <Card title="hostLocalWorkflows" icon="code" href="/sdk/host-local-workflows">
+    The SDK helper's full contract.
+  </Card>
+  <Card title="Settings" icon="gear" href="/configuration/settings">
+    The `.atomic/settings.json` schema.
+  </Card>
+</Columns>
+
+A working example lives at `examples/custom-workflow-bunx/` in the [Atomic repo](https://github.com/flora131/atomic/tree/main/examples/custom-workflow-bunx).

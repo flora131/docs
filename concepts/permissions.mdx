@@ -1,0 +1,55 @@
+---
+title: "Permissions"
+description: "Atomic disables agent permission prompts during workflows. Run in a devcontainer or worktree."
+icon: "shield-halved"
+---
+
+<Warning>
+**Atomic workflows run coding agents with all permission checks disabled.** The agent can read, write, and delete files, execute arbitrary shell commands, and make network requests without prompting. This is required for unattended pipelines. **Run workflows in a [devcontainer](/installation#devcontainer) or a [git worktree](https://git-scm.com/docs/git-worktree), not on your host machine.**
+</Warning>
+
+## The tradeoff
+
+A workflow that pauses on every `Write` or `Bash` prompt isn't a pipeline — it's a chat session with extra steps. To get unattended execution (Ralph running for hours, CI runs, scheduled jobs), the agent's interactive permission prompt has to be turned off.
+
+That choice has a cost: the agent can do anything its process can do. Atomic doesn't try to sandbox tool calls at the agent layer — it pushes you toward sandboxing at the process layer.
+
+## How each agent's prompts are bypassed
+
+| Agent | How permissions are bypassed | Key flags / settings |
+| --- | --- | --- |
+| **Claude Code** | CLI flag disables the interactive permission prompt | `--dangerously-skip-permissions` |
+| **GitHub Copilot CLI** | CLI flag enables auto-execution; SDK auto-approves all tool requests | `--yolo`, `COPILOT_ALLOW_ALL=true`, `onPermissionRequest: approveAll` |
+| **OpenCode** | Permissions handled programmatically through the event stream | Permission requests auto-replied via SSE events |
+
+Defaults can be overridden per-project via `providers` in `.atomic/settings.json` — `chatFlags` replaces defaults entirely; `envVars` are merged. See [settings](/configuration/settings).
+
+## Safe patterns
+
+### Devcontainer (recommended)
+
+A devcontainer is the safest place to run a workflow — agent actions are bounded by the container. Add one feature to `.devcontainer/devcontainer.json`:
+
+| Feature | Installs |
+| --- | --- |
+| `ghcr.io/flora131/atomic/claude:1` | Atomic + Claude Code |
+| `ghcr.io/flora131/atomic/opencode:1` | Atomic + OpenCode |
+| `ghcr.io/flora131/atomic/copilot:1` | Atomic + Copilot CLI |
+
+Each feature bundles Atomic, Bun, playwright-cli, agent configs, and the agent CLI itself. See [installation](/installation#devcontainer).
+
+### Git worktree
+
+For autonomous coding workflows like [Ralph](/workflows/built-in#ralph), a [git worktree](https://git-scm.com/docs/git-worktree) keeps the agent's changes off your working tree:
+
+```bash
+git worktree add ../my-project-ralph feature-branch
+cd ../my-project-ralph
+atomic workflow -n ralph -a claude "Build the auth module"
+```
+
+A worktree is not a security boundary — the agent can still touch anything outside it. Use a devcontainer when isolation matters.
+
+## Chat vs workflow
+
+`atomic chat` does **not** disable permissions — it spawns the native agent CLI, so you get the agent's normal prompts. The disabled-prompt behavior only applies during `atomic workflow` runs.

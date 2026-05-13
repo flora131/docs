@@ -1,0 +1,201 @@
+---
+title: "Stages"
+description: "ctx.stage, parallel fan-out, transcript hand-offs, return values, and headless stages."
+icon: "diagram-project"
+---
+
+A stage is one call to `ctx.stage(opts, clientOpts, sessionOpts, fn)`. It spawns a fresh agent session at runtime — its own tmux window, its own context, and its own node in the execution graph. Inside the callback you write raw provider SDK code.
+
+```ts
+const handle = await ctx.stage(
+  { name: "describe", description: "Describe this project" },
+  {}, // provider client options
+  {}, // provider session options
+  async (s) => {
+    await s.session.query("Describe this project in one paragraph.");
+    s.save(s.sessionId);
+  },
+);
+```
+
+## SessionContext (`s`)
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `s.client` | `ProviderClient<A>` | Pre-created SDK client (auto-managed by runtime). |
+| `s.session` | `ProviderSession<A>` | Pre-created provider session (auto-managed by runtime). |
+| `s.inputs` | `{ [K in N]?: string }` | Same typed inputs as `ctx.inputs`, forwarded so callbacks read values without closing over the outer `ctx`. |
+| `s.agent` | `AgentType` | Which agent is running. |
+| `s.paneId` | `string` | tmux pane ID for this session. |
+| `s.sessionId` | `string` | Session UUID. |
+| `s.sessionDir` | `string` | On-disk storage directory for this session. |
+| `s.save(messages)` | `SaveTranscript` | Save this session's output for downstream stages. |
+| `s.transcript(ref)` | `Promise<Transcript>` | Get a completed session's transcript (`{ path, content }`). |
+| `s.getMessages(ref)` | `Promise<SavedMessage[]>` | Get a completed session's raw native messages. |
+| `s.stage(opts, clientOpts, sessionOpts, fn)` | `Promise<SessionHandle<T>>` | Spawn a nested sub-session (child in the graph). |
+
+## Stage options
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | Unique session name within the workflow run. |
+| `description` | `string?` | Human-readable description shown in the graph. |
+| `headless` | `boolean?` | When `true`, run in-process without a tmux window — invisible in graph, tracked by background counter, identical callback API. |
+
+## Per-agent prompts
+
+| Agent | How to send a prompt |
+| --- | --- |
+| Claude | `await s.session.query(prompt)` |
+| Copilot | `await s.session.send({ prompt })` |
+| OpenCode | `await s.client.session.prompt({ sessionID: s.session.id, parts: [{ type: "text", text: prompt }] })` |
+
+## Saving transcripts
+
+Each provider saves differently:
+
+| Provider | How to save |
+| --- | --- |
+| Claude | `s.save(s.sessionId)` — auto-reads via `getSessionMessages()`. |
+| Copilot | `s.save(await session.getMessages())` — pass `SessionEvent[]`. |
+| OpenCode | `s.save(result.data!)` — pass the full `{ info, parts }` response. |
+
+## Sequential — describe → summarize
+
+The canonical handoff: one stage saves, the next reads via `s.transcript(handle)`.
+
+```ts
+const describe = await ctx.stage({ name: "describe" }, {}, {}, async (s) => {
+  await s.session.query(ctx.inputs.prompt ?? "");
+  s.save(s.sessionId);
+});
+
+await ctx.stage({ name: "summarize" }, {}, {}, async (s) => {
+  const research = await s.transcript(describe);
+  await s.session.query(`Read ${research.path} and summarize in 2-3 bullets.`);
+  s.save(s.sessionId);
+});
+```
+
+## Parallel — `Promise.all`
+
+`Promise.all` creates fan-out; the next `await` creates fan-in. Parallel siblings can't read each other.
+
+```ts
+const describe = await ctx.stage({ name: "describe" }, {}, {}, async (s) => {
+  await s.session.query(ctx.inputs.prompt ?? "");
+  s.save(s.sessionId);
+});
+
+const [a, b] = await Promise.all([
+  ctx.stage({ name: "summarize-a" }, {}, {}, async (s) => {
+    const research = await s.transcript(describe);
+    await s.session.query(`Read ${research.path} and summarize in 2-3 bullets.`);
+    s.save(s.sessionId);
+  }),
+  ctx.stage({ name: "summarize-b" }, {}, {}, async (s) => {
+    const research = await s.transcript(describe);
+    await s.session.query(`Read ${research.path} and summarize in one sentence.`);
+    s.save(s.sessionId);
+  }),
+]);
+
+await ctx.stage({ name: "merge" }, {}, {}, async (s) => {
+  const bullets = await s.transcript(a);
+  const oneliner = await s.transcript(b);
+  await s.session.query(
+    `Combine:\n\n## Bullets\n${bullets.content}\n\n## One-liner\n${oneliner.content}`,
+  );
+  s.save(s.sessionId);
+});
+```
+
+## Return values drive control flow
+
+A callback's return value becomes `handle.result` on the returned `SessionHandle<T>`. Use it to branch.
+
+```ts
+import { defineWorkflow, extractAssistantText } from "@bastani/atomic-sdk/workflows";
+
+const draft = await ctx.stage({ name: "draft" }, {}, {}, async (s) => {
+  await s.session.query(`Write a two-paragraph argument for ${topic}.`);
+  s.save(s.sessionId);
+});
+
+let lastHandle = draft;
+for (let i = 1; i <= maxIterations; i++) {
+  const review = await ctx.stage({ name: `review-${i}` }, {}, {}, async (s) => {
+    const prior = await s.transcript(lastHandle);
+    const messages = await s.session.query(
+      `Read the draft in ${prior.path}. Reply with "CLEAN" or "NEEDS_FIX: <issue>".`,
+    );
+    s.save(s.sessionId);
+    const verdict = extractAssistantText(messages, 0).toUpperCase();
+    return verdict.includes("CLEAN") && !verdict.includes("NEEDS_FIX")
+      ? ("clean" as const)
+      : ("needs_fix" as const);
+  });
+
+  if (review.result === "clean") break;
+  // otherwise: dispatch a fix stage, update lastHandle, continue
+}
+```
+
+The full pattern lives in `examples/review-fix-loop/`.
+
+## Headless stages
+
+Pass `headless: true` to run the stage in-process without a tmux window. Invisible in the graph, tracked by a background counter in the statusline. The callback API is identical.
+
+```ts
+import { defineWorkflow, extractAssistantText } from "@bastani/atomic-sdk/workflows";
+
+const seed = await ctx.stage({ name: "seed" }, {}, {}, async (s) => {
+  const result = await s.session.query(prompt);
+  s.save(s.sessionId);
+  return extractAssistantText(result, 0);
+});
+
+const [pros, cons, uses] = await Promise.all([
+  ctx.stage({ name: "pros", headless: true }, {}, {}, async (s) => {
+    const r = await s.session.query(`List 3 pros:\n\n${seed.result}`);
+    s.save(s.sessionId);
+    return extractAssistantText(r, 0);
+  }),
+  ctx.stage({ name: "cons", headless: true }, {}, {}, async (s) => {
+    const r = await s.session.query(`List 3 cons:\n\n${seed.result}`);
+    s.save(s.sessionId);
+    return extractAssistantText(r, 0);
+  }),
+  ctx.stage({ name: "uses", headless: true }, {}, {}, async (s) => {
+    const r = await s.session.query(`List 3 use cases:\n\n${seed.result}`);
+    s.save(s.sessionId);
+    return extractAssistantText(r, 0);
+  }),
+]);
+
+await ctx.stage({ name: "merge" }, {}, {}, async (s) => {
+  await s.session.query(
+    `Combine:\n\n## Pros\n${pros.result}\n\n## Cons\n${cons.result}\n\n## Uses\n${uses.result}`,
+  );
+  s.save(s.sessionId);
+});
+```
+
+The graph shows `seed → merge` — the three headless stages are transparent to the topology.
+
+## Human-in-the-loop
+
+A stage can pause for a human by issuing a query that asks the user a question — for example, allowing `AskUserQuestion` on Claude:
+
+```ts
+await ctx.stage({ name: "approve" }, {}, {}, async (s) => {
+  await s.session.query(
+    "Ask the user to confirm approval, then merge with `gh pr merge --squash`.",
+    { allowedTools: ["Bash", "Read", "AskUserQuestion"] },
+  );
+  s.save(s.sessionId);
+});
+```
+
+Works inside headless stages too — see `examples/hil-favorite-color-headless/`.

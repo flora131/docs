@@ -1,0 +1,34 @@
+---
+title: "CLI vs SDK"
+description: "Two surfaces over one workflow runtime — and how to choose between them."
+icon: "scale-balanced"
+---
+
+Atomic ships **two** things that share one workflow runtime. You can use either on its own or both together. Neither depends on the other: you can `bun add @bastani/atomic-sdk` in a project without ever installing the global binary, and you can use `atomic chat` and the built-in workflows without writing any TypeScript.
+
+|  | Atomic CLI | Atomic SDK |
+| --- | --- | --- |
+| **What it is** | Global `atomic` binary | `@bastani/atomic-sdk/workflows` TypeScript library |
+| **Install** | `install.sh` / `install.ps1` / `install.cmd` (no runtime prerequisite) or `bun install -g @bastani/atomic` | `bun add @bastani/atomic-sdk` inside your project |
+| **Entrypoint** | `atomic <command>` | `bun run src/<agent>-worker.ts` |
+| **Code required?** | No — everything is pre-built. You can also ask the agent inside `atomic chat` to use the `workflow-creator` skill and build/run a workflow on the fly. | None to start — describe the workflow in natural language and use the `workflow-creator` skill to generate it, then refine the TypeScript directly. |
+| **What you get** | `atomic chat` (agent REPL), three built-in workflows (`ralph`, `deep-research-codebase`, `open-claude-design`), session management, the live workflow panel, Atomic skills (`/init`, `/research-codebase`, `/create-spec`, …) | `defineWorkflow`, `createRegistry`, `runWorkflow`, metadata accessors (`getName`, `getInputSchema`, …), session primitives (`listSessions`, `getSessionStatus`, `attachSession` / `detachSession`, `nextWindow` / `previousWindow` / `gotoOrchestrator`), typed errors, `ctx.stage`, `s.save` / `s.transcript`, headless stages |
+| **When to reach for it** | You want autonomous execution of a standard pattern out of the box, interactive chat with your agent's full toolset, or a CLI agent that can create a purpose-built workflow before doing complex work. | You want to control the outer loop yourself — review flows, deployment gates, custom research pipelines — with full visibility into the TypeScript your team will run identically. |
+| **Read next** | [CLI commands](/cli/commands) | [SDK reference](/sdk/overview) |
+
+## One runtime
+
+Both surfaces call the same runtime underneath — the tmux/psmux session graph, the provider SDKs, and detach/reattach. They're two entry points, not two products. A worker CLI built on the SDK primitives, the global `atomic` binary, and `bunx atomic` all see the same running sessions on the shared `atomic` socket.
+
+## Using both
+
+A common setup: install the CLI for `atomic chat` and the built-in workflows, and `bun add @bastani/atomic-sdk` in your repo to author team-specific workflows. Register those local workflows with the CLI (see [registering workflows](/workflows/registering)) so `atomic workflow` discovers them alongside the built-ins.
+
+<Columns cols={2}>
+  <Card title="Install" icon="download" href="/installation">
+    CLI bootstrap, npm, devcontainer, and SDK-only paths.
+  </Card>
+  <Card title="Why Atomic" icon="circle-question" href="/concepts/why-atomic">
+    The problem workflows solve.
+  </Card>
+</Columns>
