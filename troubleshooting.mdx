@@ -1,0 +1,28 @@
+---
+title: "Troubleshooting"
+description: "Fixes for common Atomic setup issues."
+icon: "wrench"
+---
+
+## Git identity error
+
+If commits fail because Git can't identify you, configure your user globally:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+```
+
+## Windows: agents fail to spawn
+
+Make sure the agent CLI (`claude`, `opencode`, or `copilot`) is on your `PATH`. Atomic resolves agent binaries with `Bun.which()`, which handles `.cmd`, `.exe`, and `.bat` extensions automatically — but only if the directory containing the binary is on `PATH`.
+
+After installing an agent CLI, open a fresh terminal and verify it's resolvable:
+
+```powershell
+where.exe claude
+where.exe opencode
+where.exe copilot
+```
+
+If `where.exe` finds the binary but `atomic chat` still fails, restart your shell (or your IDE's integrated terminal) so it picks up the updated `PATH`.

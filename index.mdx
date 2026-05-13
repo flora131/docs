@@ -43,3 +43,40 @@ Atomic doesn't replace your coding agent or terminal — it gives them a workflo
 <Card title="Configuration" icon="gear" href="/configuration/settings">
   Atomic reads your existing `.claude`, `.opencode`, and `.github` configuration. Tune behavior in `.atomic/settings.json` and register your own workflows with `atomic workflow`.
 </Card>
+
+## Three building blocks
+
+Atomic ships three top-level primitives. Everything else in the docs is reference material on top of these.
+
+<Columns cols={3}>
+  <Card title="Workflows" icon="diagram-project" href="/concepts/workflows">
+    Deterministic TypeScript orchestration around full coding-agent sessions. Branch, retry, fan out in parallel, pause for review.
+  </Card>
+  <Card title="Skills" icon="book" href="/concepts/skills">
+    57 structured capability modules — research, spec authoring, TDD, frontend polish, source-control helpers — auto-invoked by triggers or by `/<name>`.
+  </Card>
+  <Card title="Sub-agents" icon="users" href="/concepts/sub-agents">
+    12 purpose-built agents with scoped tools and context — planner, worker, reviewer, debugger, locator, analyzer, and more.
+  </Card>
+</Columns>
+
+## Example use cases
+
+Workflows you'd author with `defineWorkflow` — see the [SDK overview](/sdk/overview):
+
+- **Review-to-merge pipeline** — review code, run CI in parallel, open a PR, notify Slack, wait for approval, merge.
+- **Support ticket → draft PR** — reproduce the issue, find root cause, try a fix in a sandbox, run tests, pause for review.
+- **Production alert investigation** — pull the failing trace, inspect recent commits, rank likely causes, draft a fix or page on-call with evidence.
+- **Parallel UX testing** — run persona-specific agents against the same feature, aggregate structured feedback into tasks.
+- **Large migration or refactor** — research, split into safe batches, run implementation + review passes, keep artifacts.
+
+## Credits
+
+Atomic stands on the shoulders of:
+
+- [Superpowers](https://github.com/obra/superpowers)
+- [Anthropic Skills](https://github.com/anthropics/skills)
+- [Ralph Wiggum Method](https://ghuntley.com/ralph/)
+- [OpenAI Codex Cookbook](https://github.com/openai/openai-cookbook)
+- [HumanLayer](https://github.com/humanlayer/humanlayer)
+- [Impeccable](https://github.com/pbakaus/impeccable)

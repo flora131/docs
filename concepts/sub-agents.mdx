@@ -1,0 +1,46 @@
+---
+title: "Specialized sub-agents"
+description: "Purpose-built agents with scoped context, tools, and termination conditions."
+icon: "users"
+---
+
+Atomic ships **12 specialized sub-agents** alongside skills and workflows. Each is a purpose-built agent with a narrow job, a scoped tool set, and its own context window.
+
+Skills and workflows auto-dispatch them. You can also invoke one directly with:
+
+```ts
+Task(subagent_type: "<name>", description: "...", prompt: "...")
+```
+
+Run `/agents` in any chat to list them.
+
+## The 12 sub-agents
+
+| Sub-agent | Purpose |
+| --- | --- |
+| `planner` | Decompose specs into structured task lists with dependency tracking. |
+| `worker` | Implement single focused tasks (multiple workers run in parallel). |
+| `reviewer` | Audit implementations against specs and best practices. |
+| `orchestrator` | Coordinate complex multi-step workflows. |
+| `debugger` | Debug errors, test failures, and unexpected behavior. |
+| `code-simplifier` | Simplify and refine code for clarity and maintainability. |
+| `codebase-locator` | Locate files, directories, and components. |
+| `codebase-analyzer` | Analyze implementation details of specific components. |
+| `codebase-pattern-finder` | Find similar implementations and usage examples. |
+| `codebase-online-researcher` | Research using web sources and DeepWiki. |
+| `codebase-research-locator` | Find prior research documents in `research/`. |
+| `codebase-research-analyzer` | Deep-dive on existing research topics. |
+
+## Why specialized agents instead of one general agent?
+
+LLMs have an architectural limitation: the more context they hold, the harder it is to attend to the right information. A single agent juggling a spec, dozens of files, tool outputs, and its own reasoning will lose details, repeat work, or hallucinate connections.
+
+Specialized sub-agents fix this with three constraints:
+
+- **Context isolation** — fresh, minimal context per job. A `worker` doesn't see the planner's deliberation; a `reviewer` doesn't see the worker's scratch work.
+- **Tool scoping** — a `reviewer` can't edit files; a `worker` can't spawn other workers. The available tool set matches the job.
+- **Parallel execution** — independent agents run concurrently. Several `codebase-locator` runs can fan out without contaminating each other's context.
+
+<Tip>
+The `research-codebase` skill, the `create-spec` skill, and the `ralph` workflow all rely on these sub-agents under the hood. You don't usually invoke them by hand — they're dispatched as your higher-level skill or workflow runs.
+</Tip>

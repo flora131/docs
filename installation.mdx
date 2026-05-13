@@ -56,7 +56,7 @@ yarn global add @bastani/atomic
 
 The npm path doesn't set up shell completions — run `atomic completions <shell>` separately if you want them. If your shell can't find `atomic` afterwards, add the directory from `bun pm bin -g` (or `npm bin -g`, `pnpm bin -g`, `yarn global bin`) to your PATH, or use the bootstrap script instead.
 
-Prerelease builds: append `@next` (e.g. `bun add -g @bastani/atomic@next`). May contain breaking changes.
+Prerelease builds: append `@next` (e.g. `npm install -g @bastani/atomic@next` or `bun add -g @bastani/atomic@next`). May contain breaking changes.
 
 ## SDK only
 
@@ -98,6 +98,22 @@ Each feature installs Atomic, Bun, playwright-cli, agent configs, and the agent 
 ```
 
 Start the container with the [Dev Containers VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) or the [Dev Container CLI](https://github.com/devcontainers/cli#dev-container-cli).
+
+## Upgrading from 0.6.x or earlier
+
+The SDK moved from `@bastani/atomic` to `@bastani/atomic-sdk` in 0.7.x. SDK users need to swap the package and update imports:
+
+```bash
+bun remove @bastani/atomic
+bun add @bastani/atomic-sdk
+```
+
+```diff
+- import { defineWorkflow } from "@bastani/atomic/workflows";
++ import { defineWorkflow } from "@bastani/atomic-sdk/workflows";
+```
+
+The CLI keeps the same package name (`@bastani/atomic`). For other SDK API changes (`createWorkflowCli` removal, `source: import.meta.path`, etc.) see [Migration from 0.x](/sdk/embedding#migration-from-0-x).
 
 ## Updating
 

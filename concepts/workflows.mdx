@@ -59,7 +59,19 @@ The topology is **auto-inferred** from your `await` / `Promise.all` patterns —
 - **Parallel** — `Promise.all([ctx.stage(...), ctx.stage(...)])`; parallel siblings finish (or fail fast) before the next stage starts.
 - **Nested** — call `s.stage(...)` inside a callback to spawn child sessions, shown as nested graph nodes.
 
-Atomic renders a live workflow panel over the session graph as the run executes — nodes per stage with status, edges for dependencies, pane previews, and highlighted transcript hand-offs.
+Atomic renders a live workflow panel over the session graph as the run executes — see [Workflow panel](#workflow-panel) below.
+
+## Workflow panel
+
+During `atomic workflow` execution, Atomic renders a live workflow panel built on [OpenTUI](https://github.com/anomalyco/opentui) over the workflow's tmux session graph:
+
+- A node per `.stage()` call with live status (pending, running, completed, failed).
+- Edges for sequential dependencies and parallel fan-out / fan-in.
+- For Ralph runs: the task list with dependency arrows, updated in real time.
+- Pane previews showing what each session is currently doing.
+- Visible `s.save()` / `s.transcript()` handoffs between stages.
+
+`atomic chat -a <agent>` has **no Atomic-owned UI** — it spawns the native agent CLI directly inside a tmux session, so chat features (streaming, `@` mentions, `/slash-commands`, model selection) come from the agent CLI itself. The workflow panel only appears during `atomic workflow` runs.
 
 ## Session isolation
 
