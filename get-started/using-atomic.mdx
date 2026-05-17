@@ -1,0 +1,126 @@
+---
+title: Using Atomic
+description: Day-to-day usage patterns for Atomic's terminal agent, sessions, prompts, and non-interactive modes.
+---
+
+# Using Atomic
+
+Atomic can be used as an interactive coding agent, a one-shot CLI, a JSON/RPC subprocess, or the execution engine underneath workflows and subagents.
+
+## Interactive mode
+
+Start the terminal UI in the repository you want Atomic to work on:
+
+```bash
+cd /path/to/project
+atomic
+```
+
+In the TUI, you can:
+
+- ask the agent to inspect, edit, and test code
+- reference files with `@` file search or command-line `@file` arguments
+- paste images in terminals that support clipboard images
+- run slash commands such as `/login`, `/model`, `/settings`, `/sessions`, `/tree`, `/compact`, and `/workflow`
+- use project resources such as skills, prompt templates, extensions, MCP tools, subagents, and workflows
+
+## Write clear prompts
+
+Good prompts give Atomic a target, constraints, and validation expectations:
+
+```text
+Find where request retry logic is implemented. Explain the flow with file paths and line numbers. Do not edit files.
+```
+
+```text
+Fix the failing auth test. Run the smallest relevant test first, then the full package test if the fix is isolated. Summarize changed files and commands run.
+```
+
+```text
+Use the research-codebase skill to map the billing webhook flow and write a research doc. Do not implement anything yet.
+```
+
+## Slash commands
+
+Type `/` in the TUI to discover commands. Common commands include:
+
+| Command | Purpose |
+| --- | --- |
+| `/help` | Show command help. |
+| `/login` / `/logout` | Manage provider credentials. |
+| `/model` | Select a model. |
+| `/settings` | Change thinking level, theme, message delivery, and transport settings. |
+| `/sessions` or `/resume` | Resume or manage prior sessions. |
+| `/tree` | Navigate a session's branch tree. |
+| `/fork` / `/clone` | Create alternate branches or copied sessions. |
+| `/compact [prompt]` | Summarize older context. |
+| `/skill:<name>` | Explicitly invoke a skill. |
+| `/workflow ...` | List, run, inspect, pause, and resume workflows. |
+
+Extensions and packages can register additional commands.
+
+## Context and project files
+
+Atomic loads instructions and resources from user, project, and package locations. Common project-level inputs include:
+
+- `AGENTS.md` or `CLAUDE.md` for repository instructions
+- `.atomic/settings.json` for project settings
+- `.atomic/skills/**/SKILL.md` for project skills
+- `.atomic/extensions/**/*.ts` for project extensions
+- `.atomic/prompts/**/*.md` for reusable prompt templates
+- `.atomic/themes/*.json` for themes
+- `.atomic/workflows/*.ts` for custom workflows
+- `.atomic/agents/` and `.atomic/chains/` for custom subagents and chains
+
+Use explicit file references when precision matters:
+
+```text
+Read src/server/auth.ts and test/auth.test.ts. Explain the failing path before editing.
+```
+
+## Sessions
+
+Atomic stores sessions automatically. A session is a tree, not just a flat transcript, so you can branch from earlier points and preserve alternate approaches.
+
+Useful commands:
+
+```bash
+atomic -c                  # Continue most recent session
+atomic -r                  # Browse previous sessions
+atomic --session <path|id> # Open a specific session
+atomic --fork <path|id>    # Fork a saved session into a new one
+atomic --no-session        # Run without saving a session
+```
+
+Inside the TUI, use `/name`, `/session`, `/tree`, `/fork`, `/clone`, `/compact`, `/export`, and `/share`.
+
+## Non-interactive mode
+
+Use print mode for scripts, checks, and quick questions:
+
+```bash
+atomic -p "Summarize this repository"
+git diff --staged | atomic -p "Review this staged diff. Return blockers first."
+atomic -p @screenshot.png "What's in this image?"
+```
+
+Use `--mode json` for JSON-line event output or `--mode rpc` for long-lived subprocess integration.
+
+## Model selection
+
+Models are resolved from built-in providers, configured custom providers, auth state, environment variables, and CLI overrides.
+
+```bash
+atomic --model anthropic/claude-sonnet-4
+atomic --model openai/gpt-5.1 -p "Review this API design"
+```
+
+Inside the TUI, use `/model`, Ctrl+L, Shift+Tab for thinking level, and Ctrl+P / Shift+Ctrl+P for scoped model cycling.
+
+## Safety habits
+
+- Ask for research first when the codebase is unfamiliar.
+- Tell the agent when not to edit.
+- Keep autonomous workflows inside a devcontainer, VM, or remote development machine.
+- Require validation evidence for code changes.
+- Use fresh-context subagents for independent research and review.

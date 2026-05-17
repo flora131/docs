@@ -1,0 +1,163 @@
+---
+title: Authoring workflows
+description: Build custom Atomic workflows with typed inputs, tasks, stages, parallel fan-out, human approval gates, and model fallbacks.
+---
+
+# Authoring workflows
+
+Custom workflows are TypeScript files that export a compiled workflow definition. Use them for repeated engineering processes such as research-before-implementation, review loops, migrations, release checks, and incident-response playbooks.
+
+## Where workflows live
+
+Project workflows usually live in:
+
+```text
+.atomic/workflows/
+```
+
+User workflows can live in:
+
+```text
+~/.atomic/agent/workflows/
+```
+
+Packages can also contribute workflows through their package manifest.
+
+## Start with the workflow skill
+
+The fastest way to create a version-correct workflow is to ask Atomic:
+
+```text
+Use the workflow skill to scaffold a workflow named review-to-merge. It should take issue and max_rounds inputs, research the issue, implement the change, run review agents, and pause before final merge instructions.
+```
+
+## Basic workflow
+
+```ts
+import { defineWorkflow } from "@bastani/workflows";
+
+export default defineWorkflow("research-then-implement")
+  .description("Research a task, implement it, then run a focused review.")
+  .input("prompt", {
+    type: "text",
+    required: true,
+    description: "The task to research and implement.",
+  })
+  .input("max_review_rounds", {
+    type: "number",
+    default: 1,
+    description: "Maximum review/fix cycles.",
+  })
+  .run(async (ctx) => {
+    const research = await ctx.task("research", {
+      prompt: `Map the codebase for this task. Return files, constraints, and risks.\n\n${String(ctx.inputs.prompt)}`,
+    });
+
+    const implementation = await ctx.task("implement", {
+      prompt: "Implement the task using this research. Return changed files and validation evidence.\n\n{previous}",
+      previous: research,
+    });
+
+    const review = await ctx.task("review", {
+      prompt: "Review the implementation for correctness and regressions.\n\n{previous}",
+      previous: implementation,
+    });
+
+    return {
+      implementation: implementation.text,
+      review: review.text,
+    };
+  })
+  .compile();
+```
+
+## Inputs
+
+Supported input types are:
+
+| Type | Use it for |
+| --- | --- |
+| `text` / `string` | Free-form strings. |
+| `number` | Numeric values. |
+| `boolean` | True/false toggles. |
+| `select` | Enumerated choices with `choices`. |
+
+Inputs are available as `ctx.inputs` inside `.run()`.
+
+## `ctx.task()` vs `ctx.stage()`
+
+Use `ctx.task()` for most workflow authoring. It creates a tracked stage, prompts the agent, supports `{previous}` handoffs, and returns a `WorkflowTaskResult`.
+
+Use `ctx.stage()` when you need lower-level session control:
+
+```ts
+const stage = ctx.stage("investigate", { model: "anthropic/claude-sonnet-4" });
+const notes = await stage.prompt("Trace the authentication flow and return file references.");
+await stage.complete(`Summarize only the migration risks from these notes:\n\n${notes}`);
+```
+
+## Parallel fan-out
+
+Use `ctx.parallel()` when work is independent:
+
+```ts
+const [fileMap, patterns, history] = await ctx.parallel([
+  { name: "locate", task: "Find files related to auth middleware." },
+  { name: "patterns", task: "Find similar middleware implementations." },
+  { name: "history", task: "Find prior research docs about auth." },
+]);
+```
+
+Good parallel work includes codebase discovery, pattern search, independent reviews, external research, and read-only validation. Avoid parallel writers in the same worktree unless they are isolated.
+
+## Sequential chains
+
+Use `ctx.chain()` when each step should receive the prior result:
+
+```ts
+const [inventory, plan, review] = await ctx.chain([
+  { name: "inventory", task: "Inventory API handlers that use legacy auth." },
+  { name: "plan", task: "Create a migration plan from this inventory:\n\n{previous}" },
+  { name: "review", task: "Review this migration plan for missing edge cases:\n\n{previous}" },
+]);
+```
+
+## Human-in-the-loop gates
+
+Use `ctx.ui` for decisions the model should not make alone:
+
+```ts
+const approved = await ctx.ui.confirm("Proceed to implementation?");
+if (!approved) return { status: "cancelled" };
+
+const target = await ctx.ui.select("Which rollout should we use?", ["staged", "big-bang"] as const);
+```
+
+Available helpers are `input`, `confirm`, `select`, and `editor`.
+
+## Model fallbacks
+
+Task and stage options can set a primary `model` and ordered `fallbackModels`:
+
+```ts
+const review = await ctx.task("review", {
+  prompt: "Review the current diff for regressions.",
+  model: "anthropic/claude-sonnet-4",
+  fallbackModels: ["openai/gpt-5-mini", "github-copilot/gpt-5-mini"],
+});
+```
+
+Fallbacks are for retryable provider/model failures such as rate limits, quota/auth/provider outages, unavailable models, timeouts, and 5xx errors. Tool failures and workflow-code failures are not retried as model fallbacks.
+
+## Output discipline
+
+Ask writer stages to return:
+
+- changed files
+- implementation summary
+- commands run and exit codes
+- validation evidence
+- intentionally skipped work
+- risks, surprises, and decisions needing human approval
+
+This makes downstream review stages more reliable.
