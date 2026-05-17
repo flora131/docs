@@ -1,0 +1,197 @@
+---
+title: Subagents reference
+description: "Reference for Atomic's subagent extension: execution modes, agents, chains, async runs, worktrees, and configuration."
+---
+
+# Subagents reference
+
+The subagents package lets Atomic launch focused child agent sessions from a parent session. It supports single-agent runs, parallel groups, sequential chains, async/background execution, forked context, saved chain files, worktree isolation, and management commands for custom agents.
+
+## Built-in specialists
+
+| Agent | Purpose | Notes |
+| --- | --- | --- |
+| `codebase-locator` | Locate files, directories, tests, fixtures, and configs relevant to a topic. | Read-only finder; returns a categorized map. |
+| `codebase-analyzer` | Explain how specific code currently works. | Read-only; traces flow with file references. |
+| `codebase-pattern-finder` | Find similar implementations and conventions to model after. | Read-only; returns examples and snippets. |
+| `codebase-research-locator` | Discover prior `research/` and `specs/` docs. | Read-only; sorts and flags recency/supersession. |
+| `codebase-research-analyzer` | Extract decisions and constraints from prior docs. | Read-only; filters for what still applies. |
+| `codebase-online-researcher` | Research authoritative external sources. | Can persist useful findings under `research/web/`. |
+| `code-simplifier` | Clean up recently changed code without changing behavior. | Writer; preserves observable behavior. |
+| `debugger` | Reproduce, diagnose, and fix failing behavior. | Writer; useful for tests, stack traces, and bugs. |
+
+## Single agent
+
+```text
+/run codebase-analyzer "Trace the auth flow from route handler through token verification. Include file:line refs. Do not edit."
+```
+
+Programmatic equivalent:
+
+```ts
+subagent({
+  agent: "codebase-analyzer",
+  task: "Trace the auth flow from route handler through token verification. Include file:line refs. Do not edit.",
+});
+```
+
+## Parallel execution
+
+Use parallel execution for independent read-only work:
+
+```text
+/parallel \
+  codebase-locator "Map auth files and tests" \
+  codebase-analyzer "Trace token refresh behavior" \
+  codebase-pattern-finder "Find existing middleware patterns"
+```
+
+Programmatic equivalent:
+
+```ts
+subagent({
+  tasks: [
+    { agent: "codebase-locator", task: "Map auth files and tests" },
+    { agent: "codebase-analyzer", task: "Trace token refresh behavior" },
+    { agent: "codebase-pattern-finder", task: "Find existing middleware patterns" },
+  ],
+  concurrency: 3,
+  context: "fresh",
+});
+```
+
+## Chains
+
+Chains run sequentially and pass the previous output forward:
+
+```ts
+subagent({
+  chain: [
+    { agent: "codebase-locator", task: "Map files relevant to the migration target" },
+    { agent: "codebase-analyzer", task: "Trace current behavior of the files in {previous}" },
+    { agent: "debugger", task: "Patch the failing case using this context: {previous}" },
+  ],
+});
+```
+
+Chain task strings can use:
+
+| Variable | Meaning |
+| --- | --- |
+| `{task}` | The original root task passed to the chain. |
+| `{previous}` | Text output from the previous step. |
+| `{chain_dir}` | Shared directory for chain artifacts. |
+
+## Async/background runs
+
+For long work, run subagents asynchronously and check status later:
+
+```ts
+subagent({
+  agent: "debugger",
+  task: "Reproduce the failing checkout test and patch the root cause.",
+  async: true,
+});
+```
+
+Status/control actions:
+
+```ts
+subagent({ action: "status", id: "<run-id>" });
+subagent({ action: "interrupt", id: "<run-id>" });
+subagent({ action: "resume", id: "<run-id>", message: "Focus only on the null-token branch." });
+```
+
+## Fresh vs forked context
+
+| Context | Use it for |
+| --- | --- |
+| `fresh` | Independent review, discovery, and adversarial analysis. The child inspects the repo directly. |
+| `fork` | Writer threads that should inherit the parent conversation/session context. |
+
+Prefer fresh context for reviewers so they do not inherit the parent's assumptions.
+
+## Worktree isolation
+
+Concurrent writers can conflict. If you intentionally run multiple writers, isolate them:
+
+```ts
+subagent({
+  tasks: [
+    { agent: "debugger", task: "Fix package A tests" },
+    { agent: "debugger", task: "Fix package B tests" },
+  ],
+  worktree: true,
+});
+```
+
+This requires a clean git state.
+
+## Custom agents
+
+Custom agent files can live in user or project agent directories such as `.atomic/agents/`.
+
+```md
+---
+name: api-reviewer
+description: Review API compatibility and migration risks.
+model: anthropic/claude-sonnet-4
+thinking: high
+tools: read, grep, find, ls, bash
+---
+
+You are a read-only API compatibility reviewer. Inspect public interfaces, changelog expectations, and migration notes. Report blockers with file:line references. Do not edit files.
+```
+
+## Custom chains
+
+Saved chain files make common handoffs reusable:
+
+```md
+---
+name: research-then-review
+---
+
+## locate
+agent: codebase-locator
+
+Map files relevant to: {task}
+
+## analyze
+agent: codebase-analyzer
+
+Trace behavior using the locator output: {previous}
+
+## review
+agent: codebase-pattern-finder
+
+Find analogous patterns and conventions for the analyzed code: {previous}
+```
+
+Run a saved chain with:
+
+```text
+/run-chain research-then-review -- migrate auth middleware
+```
+
+## Prompting rules
+
+A strong subagent prompt names:
+
+- the exact goal
+- relevant files, diffs, research docs, or constraints
+- whether editing is allowed
+- validation expectations
+- output format
+- stop rules
+
+Avoid vague prompts such as “review everything.” Prefer “Review the current diff for correctness regressions. Inspect changed files directly. Do not edit. Return blockers first with file:line references.”
+
+## Recommended review loop
+
+1. Use read-only subagents for discovery.
+2. Launch one writer for implementation.
+3. Run fresh-context read-only reviewers in parallel.
+4. Synthesize reviewer feedback in the parent session.
+5. Launch one writer to apply accepted fixes.
+6. Validate and inspect the final diff yourself.

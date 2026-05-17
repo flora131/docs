@@ -1,0 +1,113 @@
+---
+title: Configuration
+description: Understand Atomic's user and project configuration model, resource discovery, and credential options.
+---
+
+# Configuration
+
+Atomic is configured through a combination of environment variables, auth storage, user settings, project settings, and package-provided resources.
+
+## Configuration layers
+
+Atomic intentionally separates global preferences from repository-specific behavior.
+
+| Layer | Typical location | Use it for |
+| --- | --- | --- |
+| Environment | shell variables | API keys, CI values, temporary overrides. |
+| Auth storage | Atomic user data directory | OAuth/subscription tokens and saved credentials managed by `/login`. |
+| User settings | `~/.atomic/settings.json` or package-specific user settings | Personal model defaults, theme, keybindings, global packages. |
+| Project settings | `.atomic/settings.json` in a repo | Team conventions, allowed resources, project packages, tools, extensions, prompt templates. |
+| Project files | `AGENTS.md`, `.atomic/**` | Instructions and reusable resources checked into the repository. |
+
+<Note>
+  Some lower-level Pi package docs use `.pi` paths because Atomic builds on the Pi agent runtime. In the Atomic distribution, prefer `.atomic` for project-local configuration unless a package explicitly documents a `.pi` compatibility path.
+</Note>
+
+## Provider credentials
+
+For API-key providers, environment variables are usually the simplest setup:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+export OPENAI_API_KEY=sk-...
+```
+
+For subscription providers, start the TUI and run:
+
+```text
+/login
+```
+
+See [Providers](/reference/providers) for provider-specific variables and resolution order.
+
+## Project settings
+
+Create `.atomic/settings.json` to keep project behavior consistent:
+
+```json
+{
+  "model": "anthropic/claude-sonnet-4",
+  "theme": "atomic-dark",
+  "resources": {
+    "packages": ["@bastani/workflows", "@bastani/subagents"]
+  },
+  "tools": {
+    "disabled": []
+  }
+}
+```
+
+Settings are merged with user settings. Project settings should encode team-safe defaults, not personal preferences.
+
+## Resource discovery
+
+Atomic can discover and load:
+
+- **extensions** — custom tools, commands, UI widgets, provider integrations, event hooks
+- **skills** — markdown capability modules with trigger descriptions
+- **prompt templates** — reusable slash-command prompts
+- **themes** — JSON color themes for the TUI
+- **packages** — bundled groups of extensions, skills, prompts, themes, workflows, and agents
+- **MCP servers** — external tools exposed through the MCP adapter
+- **workflows** — TypeScript `defineWorkflow()` files
+- **subagents and chains** — specialized agent definitions and chain files
+
+Project resources are the right place for team workflows. User resources are the right place for personal shortcuts.
+
+## Recommended repo setup
+
+A practical Atomic-enabled repository often includes:
+
+```text
+.
+├── AGENTS.md
+├── .atomic/
+│   ├── settings.json
+│   ├── workflows/
+│   │   └── review-to-merge.ts
+│   ├── skills/
+│   │   └── domain-review/SKILL.md
+│   ├── prompts/
+│   │   └── review-api.md
+│   └── extensions/
+│       └── project-tools.ts
+└── research/
+    └── docs/
+```
+
+## Updating configuration safely
+
+1. Put team-wide rules in project settings and `AGENTS.md`.
+2. Keep secrets out of the repository; use environment variables or login-managed auth.
+3. Version workflows, skills, and prompt templates alongside code.
+4. Prefer explicit package versions for shared packages.
+5. Document required external tools in the project README.
+
+## Deep reference
+
+- [Settings](/reference/settings)
+- [Providers](/reference/providers)
+- [Pi packages](/customization/packages)
+- [Extensions](/customization/extensions)
+- [Skills](/customization/skills)
+- [Prompt templates](/customization/prompt-templates)

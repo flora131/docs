@@ -169,6 +169,98 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Atomic reference",
+        "groups": [
+          {
+            "group": "Start here",
+            "pages": [
+              "introduction",
+              "getting-started/quickstart",
+              "getting-started/using-atomic",
+              "getting-started/configuration"
+            ]
+          },
+          {
+            "group": "Core concepts",
+            "pages": [
+              "core-concepts/architecture",
+              "reference/providers",
+              "reference/settings",
+              "reference/keybindings",
+              "reference/sessions",
+              "reference/compaction"
+            ]
+          },
+          {
+            "group": "Workflow orchestration",
+            "pages": [
+              "workflows/overview",
+              "workflows/authoring",
+              "workflows/built-ins",
+              "workflows/workflow-reference"
+            ]
+          },
+          {
+            "group": "Subagents",
+            "pages": [
+              "subagents/guide",
+              "subagents/overview",
+              "customization/intercom"
+            ]
+          },
+          {
+            "group": "Customization",
+            "pages": [
+              "customization/extensions",
+              "customization/skills",
+              "customization/prompt-templates",
+              "customization/themes",
+              "customization/packages"
+            ]
+          },
+          {
+            "group": "Tools and integrations",
+            "pages": [
+              "customization/mcp",
+              "customization/web-access",
+              "customization/custom-models",
+              "customization/custom-providers"
+            ]
+          },
+          {
+            "group": "Programmatic usage",
+            "pages": [
+              "reference/sdk",
+              "reference/rpc",
+              "reference/json-event-stream",
+              "reference/tui-components"
+            ]
+          },
+          {
+            "group": "Data formats",
+            "pages": [
+              "reference/session-format"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/index"
+            ]
+          },
+          {
+            "group": "Platform",
+            "pages": [
+              "platform/terminal-setup",
+              "platform/tmux",
+              "platform/windows",
+              "platform/termux",
+              "platform/shell-aliases"
+            ]
+          }
+        ]
       }
     ],
     "global": {

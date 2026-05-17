@@ -1,0 +1,80 @@
+---
+title: Architecture
+description: "How Atomic fits together: CLI, TUI, sessions, resources, packages, workflows, extensions, and SDK surfaces."
+---
+
+# Architecture
+
+Atomic is a distribution of the Pi coding-agent runtime plus first-party packages for workflows, subagents, MCP, web access, intercom, skills, themes, and examples.
+
+## Main pieces
+
+| Piece | Role |
+| --- | --- |
+| `@bastani/atomic` | CLI, TUI, session runtime, settings, model registry, tools, SDK, and resource loading. |
+| `@bastani/workflows` | Workflow extension, built-in workflows, workflow SDK helpers, workflow panel, and workflow skill. |
+| `@bastani/subagents` | Subagent extension, built-in agents, chains, prompt shortcuts, and subagent skill. |
+| `@bastani/mcp` | MCP adapter that turns MCP servers into Atomic tools and UI resources. |
+| `@bastani/web-access` | Web search, code search, fetch/extract, GitHub, PDF, YouTube, and video tools. |
+| `@bastani/intercom` | Session-to-session messaging and supervisor escalation for coordinated multi-agent work. |
+
+## Runtime flow
+
+1. The CLI parses flags and selects interactive, print, JSON, or RPC mode.
+2. Settings and resources are loaded from user, project, and package locations.
+3. A model provider is resolved from built-ins, custom providers, auth, environment variables, and CLI settings.
+4. The session runtime builds the system prompt, active tools, context files, skills, and extensions.
+5. Each turn streams events through the runtime and TUI.
+6. Messages, tool calls, model changes, labels, compaction entries, and branch summaries are persisted in the session file.
+
+## Resource model
+
+Atomic's customization model is additive. Packages and projects can contribute resources without forking the CLI:
+
+- extensions register tools, commands, renderers, UI components, hooks, and providers
+- skills add just-in-time instructions for specific task types
+- prompt templates create reusable commands
+- themes customize the terminal UI
+- workflows encode multi-stage process
+- subagents add specialized worker definitions
+- MCP servers expose external capabilities
+
+## Session model
+
+Sessions are persisted as structured entries. They support:
+
+- replay and resume
+- tree navigation
+- fork/clone workflows
+- compaction
+- branch summaries
+- labels and names
+- HTML export
+- SDK/RPC access
+
+See [Sessions](/reference/sessions) and [Session file format](/reference/session-format).
+
+## Extension points
+
+Use the extension API when you need to change the agent environment itself:
+
+- add a tool
+- intercept a tool call
+- add a slash command
+- render custom messages
+- add a status widget or footer
+- register a provider
+- customize compaction
+- integrate with project infrastructure
+
+Use workflows when you need repeatable process. Use skills when you need reusable guidance. Use prompt templates when you need a parameterized prompt.
+
+## Programmatic surfaces
+
+Atomic can be embedded or automated through:
+
+- [SDK](/reference/sdk) for TypeScript control
+- [RPC mode](/reference/rpc) for subprocess clients
+- [JSON event stream](/reference/json-event-stream) for event consumers
+- workflow definitions for orchestration
+- extension APIs for runtime customization
