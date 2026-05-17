@@ -1,0 +1,134 @@
+---
+title: "Installation"
+description: "Install the Atomic CLI, the SDK, or both."
+icon: "download"
+---
+
+`@bastani/atomic` is the CLI; `@bastani/atomic-sdk` is the library. Install whichever you need — neither depends on the other.
+
+<Note>
+The CLI needs a terminal multiplexer (tmux on macOS/Linux, psmux on Windows) and at least one authenticated coding agent CLI at runtime. The multiplexer is auto-installed on the first non-info `atomic` command; the agent CLIs are not. See [Quickstart prerequisites](/get-started/quickstart#prerequisites).
+</Note>
+
+## CLI — bootstrap script (recommended)
+
+The bootstrap script downloads a verified prebuilt binary, installs it to `~/.local/bin` (or `%LOCALAPPDATA%\atomic\bin` on Windows), updates your PATH, and sets up shell completions. No Bun or Node prerequisite.
+
+<CodeGroup>
+
+```bash macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/flora131/atomic/main/install.sh | bash
+```
+
+```powershell Windows (PowerShell)
+irm https://raw.githubusercontent.com/flora131/atomic/main/install.ps1 | iex
+```
+
+```bat Windows (cmd.exe)
+curl -fsSL https://raw.githubusercontent.com/flora131/atomic/main/install.cmd -o install.cmd && install.cmd && del install.cmd
+```
+
+</CodeGroup>
+
+Pin a version by passing it as an argument: `bash install.sh 0.4.47`, `./install.ps1 0.4.47`, or `install.cmd 0.4.47`. Upgrade later by re-running the same one-liner.
+
+## CLI — npm
+
+<CodeGroup>
+
+```bash npm
+npm install -g @bastani/atomic
+```
+
+```bash Bun
+bun add -g @bastani/atomic
+```
+
+```bash pnpm
+pnpm add -g @bastani/atomic
+```
+
+```bash Yarn
+yarn global add @bastani/atomic
+```
+
+</CodeGroup>
+
+The npm path doesn't set up shell completions — run `atomic completions <shell>` separately if you want them. If your shell can't find `atomic` afterwards, add the directory from `bun pm bin -g` (or `npm bin -g`, `pnpm bin -g`, `yarn global bin`) to your PATH, or use the bootstrap script instead.
+
+Prerelease builds: append `@next` (e.g. `npm install -g @bastani/atomic@next` or `bun add -g @bastani/atomic@next`). May contain breaking changes.
+
+## SDK only
+
+If you only want to call `defineWorkflow(...)` in your own TypeScript project and never need the `atomic` binary:
+
+```bash
+bun init -y                                # new project
+bun add @bastani/atomic-sdk                # the SDK
+bun add @anthropic-ai/claude-agent-sdk     # the provider SDK you target
+```
+
+The SDK is fully standalone — it bundles its own orchestrator dispatcher and never reaches into a sibling `@bastani/atomic` package. You still need a multiplexer and an authenticated agent CLI at runtime. To route self-exec through a globally installed `atomic` binary instead of the bundled dispatcher, pass `pathToAtomicExecutable` to `runWorkflow` — see [Running & embedding](/sdk/run-workflow).
+
+## Devcontainer
+
+Devcontainers isolate the agent from your host, limiting the blast radius of destructive actions — the safest way to run workflows. Add one feature to `.devcontainer/devcontainer.json`:
+
+| Feature | Agent |
+| --- | --- |
+| `ghcr.io/flora131/atomic/claude:1` | Atomic + Claude Code |
+| `ghcr.io/flora131/atomic/opencode:1` | Atomic + OpenCode |
+| `ghcr.io/flora131/atomic/copilot:1` | Atomic + Copilot CLI |
+
+Each feature installs Atomic, Bun, playwright-cli, agent configs, and the agent CLI itself. First run takes about a minute to warm up.
+
+```jsonc
+{
+  "image": "mcr.microsoft.com/devcontainers/rust:latest",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils": {},
+    "ghcr.io/flora131/atomic/claude:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "remoteEnv": {
+    "GH_TOKEN": "${localEnv:GH_TOKEN}",
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+  }
+}
+```
+
+Start the container with the [Dev Containers VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) or the [Dev Container CLI](https://github.com/devcontainers/cli#dev-container-cli).
+
+## Upgrading from 0.6.x or earlier
+
+The SDK moved from `@bastani/atomic` to `@bastani/atomic-sdk` in 0.7.x. SDK users need to swap the package and update imports:
+
+```bash
+bun remove @bastani/atomic
+bun add @bastani/atomic-sdk
+```
+
+```diff
+- import { defineWorkflow } from "@bastani/atomic/workflows";
++ import { defineWorkflow } from "@bastani/atomic-sdk/workflows";
+```
+
+The CLI keeps the same package name (`@bastani/atomic`). For other SDK API changes (`createWorkflowCli` removal, `source: import.meta.path`, etc.) see [Migration from 0.x](/sdk/embedding#migration-from-0-x).
+
+## Updating
+
+Use the same channel you installed through. `atomic update --check` shows your current version, the latest release, and the recommended update command.
+
+- **Bootstrap binary:** `atomic update`
+- **npm:** `npm update -g @bastani/atomic` (or the `bun` / `pnpm` / `yarn` equivalent)
+
+## Uninstalling
+
+`atomic` only removes files it installed. Match the channel you installed through:
+
+- **Bootstrap binary:** `atomic uninstall` (add `--purge` to also wipe `~/.atomic`)
+- **npm:** `npm uninstall -g @bastani/atomic` (or the `bun` / `pnpm` / `yarn` equivalent)
+
+<Warning>
+On Windows with Bun, `bun remove -g` may leave the bin shim and the platform-specific package behind ([oven-sh/bun#11970](https://github.com/oven-sh/bun/issues/11970)). If `atomic` still resolves on PATH, delete `%USERPROFILE%\.bun\bin\atomic.exe`, `%USERPROFILE%\.bun\bin\atomic.bunx`, and `%USERPROFILE%\.bun\install\global\node_modules\@bastani\atomic-windows-*`.
+</Warning>

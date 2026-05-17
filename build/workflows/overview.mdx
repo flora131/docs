@@ -1,0 +1,105 @@
+---
+title: Workflows
+description: Use Atomic workflows to encode multi-stage engineering processes as deterministic TypeScript orchestration around coding-agent sessions.
+---
+
+# Workflows
+
+Workflows make an agent process repeatable. A workflow is a TypeScript definition that launches agent stages, passes context between them, runs work in parallel when safe, asks humans for decisions, and records status for inspection or resume.
+
+## Built-in workflows
+
+| Workflow | Use it for | Typical command |
+| --- | --- | --- |
+| `deep-research-codebase` | Broad repository research written to `research/docs/`. | `/workflow deep-research-codebase prompt="Map the billing system"` |
+| `ralph` | Autonomous plan → implement → simplify → review loops for bounded coding tasks. | `/workflow ralph prompt="Implement the cache invalidation spec"` |
+| `open-claude-design` | Design generation and handoff from a prompt/reference asset. | `/workflow open-claude-design prompt="Team activity feed" output_type=prototype` |
+
+Run `/workflow list` to see installed workflows and `/workflow inputs <name>` to inspect inputs.
+
+## Authoring model
+
+Workflows use the builder API exported by `@bastani/workflows`:
+
+```ts
+import { defineWorkflow } from "@bastani/workflows";
+
+export default defineWorkflow("review-change")
+  .description("Research, implement, and review a focused change.")
+  .input("prompt", {
+    type: "text",
+    required: true,
+    description: "Change request to implement.",
+  })
+  .run(async (ctx) => {
+    const research = await ctx.task("research", {
+      prompt: `Research the codebase for: ${String(ctx.inputs.prompt)}`,
+    });
+
+    const implementation = await ctx.task("implement", {
+      prompt: "Implement the requested change using this research:\n\n{previous}",
+      previous: research,
+    });
+
+    const review = await ctx.task("review", {
+      prompt: "Review the implementation for regressions:\n\n{previous}",
+      previous: implementation,
+    });
+
+    return { review: review.text };
+  })
+  .compile();
+```
+
+Project workflows are discovered from `.atomic/workflows/`. User workflows can live in `~/.atomic/agent/workflows/`, and packages can contribute workflows.
+
+## Core primitives
+
+| Primitive | What it does |
+| --- | --- |
+| `ctx.task(name, options)` | Run one tracked agent-backed task and return text plus metadata. |
+| `ctx.stage(name, options)` | Create a lower-level stage and call `stage.prompt()` or `stage.complete()` yourself. |
+| `ctx.parallel(steps)` | Fan out independent tasks and wait for all results. |
+| `ctx.chain(steps)` | Run sequential tasks where later steps can receive `{previous}`. |
+| `ctx.ui.input/confirm/select/editor` | Pause for human input inside the workflow panel. |
+| `model` / `fallbackModels` | Select a primary model and retry eligible provider/model failures with fallbacks. |
+
+## Execution surfaces
+
+You can run workflows from:
+
+- `/workflow ...` in the TUI
+- the LLM-callable `workflow` tool
+- the workflow panel and keyboard shortcuts
+- TypeScript helpers such as `runWorkflow`, `runTask`, `runParallel`, and `runChain`
+
+Common lifecycle commands:
+
+```text
+/workflow list
+/workflow inputs <name>
+/workflow <name> key=value
+/workflow status <run-id>
+/workflow interrupt <run-id>
+/workflow resume <run-id>
+```
+
+Workflows run as background tasks. Attach to the graph viewer with `/workflow connect <run-id>` or the configured workflow-panel shortcut.
+
+## Best practices
+
+- Keep each stage narrow and outcome-oriented.
+- Pass summarized context forward instead of raw transcripts when possible.
+- Use parallel stages for independent research/review, not conflicting writes.
+- Put approval gates before irreversible or high-scope actions.
+- Ask writer stages to return changed files and validation evidence.
+- Store custom workflows in the repository so the team can review and version them.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authoring workflows" icon="code" href="/build/workflows/authoring" />
+  <Card title="Built-in workflows" icon="box-open" href="/build/workflows/built-ins" />
+  <Card title="Workflow reference" icon="book" href="/reference/workflows/sdk-runtime" />
+  <Card title="Subagents" icon="people-arrows" href="/build/subagents/reference" />
+</CardGroup>

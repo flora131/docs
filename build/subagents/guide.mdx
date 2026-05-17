@@ -1,0 +1,107 @@
+---
+title: Subagent guide
+description: How to use Atomic's specialized subagents for discovery, analysis, review, debugging, and cleanup.
+---
+
+# Subagent guide
+
+Subagents let Atomic split work across focused agent sessions. Instead of giving one agent every file, decision, and objective, you delegate narrow jobs to specialists with isolated context and scoped tools.
+
+## Built-in agents
+
+| Agent | Best for | Writes files? |
+| --- | --- | --- |
+| `codebase-locator` | Find files, directories, tests, configs, and entry points. | No |
+| `codebase-analyzer` | Explain how a specific area works with file references. | No |
+| `codebase-pattern-finder` | Find analogous implementations and conventions. | No |
+| `codebase-online-researcher` | Fetch authoritative external docs and sources. | Can write research artifacts |
+| `codebase-research-locator` | Locate prior local research/spec docs. | No |
+| `codebase-research-analyzer` | Extract relevant decisions from prior docs. | No |
+| `debugger` | Reproduce, diagnose, and fix failing behavior. | Yes |
+| `code-simplifier` | Clean up changed code without changing behavior. | Yes |
+
+## Launch a single subagent
+
+```text
+/run codebase-locator "Find all files involved in user authentication. Return a categorized file map only."
+```
+
+```text
+/run codebase-analyzer "Trace the login flow from route handler to token creation with file:line references. Do not edit."
+```
+
+## Run work in parallel
+
+Use parallel read-only agents for discovery and review:
+
+```text
+/parallel \
+  codebase-locator "Map files relevant to billing webhooks" \
+  codebase-pattern-finder "Find analogous webhook handlers" \
+  codebase-research-locator "Find prior research or specs about billing webhooks"
+```
+
+Parallelism is ideal for independent research. Do not run multiple writers against the same worktree unless you use worktree isolation.
+
+## Chain agents
+
+Chains pass one agent's output into the next:
+
+```text
+/chain \
+  codebase-locator "Find auth middleware files" \
+  codebase-analyzer "Trace current behavior using the locator output" \
+  debugger "Fix the failing auth middleware test using the analysis"
+```
+
+## Good subagent prompts
+
+A good subagent prompt includes:
+
+- a specific goal
+- relevant files, diffs, or research paths if known
+- whether editing is allowed
+- stop conditions
+- the desired output shape
+
+Examples:
+
+```text
+Review the current git diff for correctness regressions. Inspect changed files directly. Do not edit. Return blockers first with file:line references.
+```
+
+```text
+Apply only the fixes listed below. Preserve behavior and do not expand scope. Run focused validation and return changed files plus command results.
+```
+
+## Recommended implementation loop
+
+For non-trivial changes:
+
+1. Run locator/analyzer/pattern-finder agents for context.
+2. Ask the user for any remaining scope decisions.
+3. Launch one writer (`debugger` or `code-simplifier`).
+4. Run fresh-context reviewers in parallel.
+5. Synthesize feedback and apply only fixes worth doing now.
+6. Validate and summarize.
+
+## Fresh vs forked context
+
+- **Fresh context** is best for adversarial review because the subagent inspects the repo directly without inheriting the parent agent's assumptions.
+- **Forked context** is useful for a writer thread that should know the parent conversation history.
+
+## Async runs
+
+Use background subagent runs for long work. Check status instead of blocking the main session:
+
+```text
+/subagent status <run-id>
+```
+
+## Worktree isolation
+
+If two writer agents must run at the same time, isolate them with git worktrees. This prevents conflicting edits in the same checkout.
+
+## Custom agents and chains
+
+You can define project-specific agents under `.atomic/agents/` and reusable chains under `.atomic/chains/`. See [pi-subagents reference](/build/subagents/reference) for frontmatter, chain variables, management commands, and configuration.

@@ -11,67 +11,123 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Get started",
+        "icon": "rocket",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Start here",
             "pages": [
-              "index",
-              "installation",
-              "quickstart"
+              "get-started/introduction",
+              "get-started/quickstart",
+              "get-started/installation",
+              "get-started/using-atomic",
+              "get-started/configuration"
             ]
           },
           {
-            "group": "Concepts",
+            "group": "Understand Atomic",
             "pages": [
-              "concepts/why-atomic",
-              "concepts/cli-vs-sdk",
-              "concepts/workflows",
-              "concepts/skills",
-              "concepts/sub-agents",
-              "concepts/sessions",
-              "concepts/agents",
-              "concepts/permissions"
+              "get-started/concepts/why-atomic",
+              "get-started/concepts/cli-vs-sdk",
+              "get-started/architecture",
+              "get-started/concepts/workflows",
+              "get-started/concepts/sessions",
+              "get-started/concepts/permissions"
             ]
           },
           {
-            "group": "Workflows",
+            "group": "Core capabilities",
             "pages": [
-              "workflows/built-in",
-              "workflows/running",
-              "workflows/building",
-              "workflows/registering"
-            ]
-          },
-          {
-            "group": "CLI",
-            "pages": [
-              "cli/commands",
-              "cli/context-files"
-            ]
-          },
-          {
-            "group": "Configuration",
-            "pages": [
-              "configuration/settings",
-              "configuration/agent-files",
-              "configuration/ci"
+              "get-started/concepts/skills",
+              "get-started/concepts/subagents",
+              "get-started/concepts/agents"
             ]
           },
           {
             "group": "Help",
             "pages": [
-              "troubleshooting",
-              "faq"
+              "get-started/troubleshooting",
+              "get-started/faq"
             ]
           }
         ]
       },
       {
-        "tab": "SDK reference",
+        "tab": "Build",
+        "icon": "hammer",
         "groups": [
           {
-            "group": "Overview",
+            "group": "Workflows",
+            "pages": [
+              "build/workflows/overview",
+              "build/workflows/running",
+              "build/workflows/built-ins",
+              "build/workflows/building",
+              "build/workflows/authoring",
+              "build/workflows/registering"
+            ]
+          },
+          {
+            "group": "Agents and skills",
+            "pages": [
+              "build/subagents/guide",
+              "build/skills",
+              "build/subagents/reference"
+            ]
+          },
+          {
+            "group": "Configure",
+            "pages": [
+              "build/configuration/settings",
+              "build/configuration/providers",
+              "build/configuration/agent-files",
+              "build/configuration/ci"
+            ]
+          },
+          {
+            "group": "Connect tools",
+            "pages": [
+              "build/integrations/mcp",
+              "build/integrations/web-access",
+              "build/integrations/intercom",
+              "build/integrations/custom-models",
+              "build/integrations/custom-providers"
+            ]
+          },
+          {
+            "group": "Extend Atomic",
+            "pages": [
+              "build/extend/extensions",
+              "build/extend/prompt-templates",
+              "build/extend/packages",
+              "build/extend/themes"
+            ]
+          },
+          {
+            "group": "Environment setup",
+            "pages": [
+              "build/platform/terminal-setup",
+              "build/platform/shell-aliases",
+              "build/platform/tmux",
+              "build/platform/windows",
+              "build/platform/termux"
+            ]
+          },
+          {
+            "group": "Examples and contribution",
+            "pages": [
+              "build/examples",
+              "development"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "SDK",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "Start with the SDK",
             "pages": [
               "sdk/overview",
               "sdk/host-local-workflows",
@@ -79,7 +135,7 @@
             ]
           },
           {
-            "group": "Authoring workflows",
+            "group": "Author workflows",
             "pages": [
               "sdk/define-workflow",
               "sdk/stages",
@@ -87,7 +143,7 @@
             ]
           },
           {
-            "group": "Running & embedding",
+            "group": "Run and embed",
             "pages": [
               "sdk/run-workflow",
               "sdk/embedding",
@@ -97,186 +153,123 @@
         ]
       },
       {
-        "tab": "Agent reference",
+        "tab": "Reference",
+        "icon": "book-open",
         "groups": [
           {
-            "group": "Claude Code",
+            "group": "Atomic CLI",
+            "pages": [
+              "reference/cli/commands",
+              "reference/cli/context-files",
+              "reference/cli/settings",
+              "reference/cli/keybindings"
+            ]
+          },
+          {
+            "group": "Runtime",
+            "pages": [
+              "reference/runtime/sessions",
+              "reference/runtime/compaction",
+              "reference/runtime/session-format",
+              "reference/runtime/json-event-stream",
+              "reference/runtime/rpc"
+            ]
+          },
+          {
+            "group": "Workflow and TUI APIs",
+            "pages": [
+              "reference/workflows/sdk-runtime",
+              "reference/workflows/sdk",
+              "reference/tui/components"
+            ]
+          },
+          {
+            "group": "Agent integrations",
             "pages": [
               {
-                "group": "CLI",
+                "group": "Claude Code",
                 "pages": [
-                  "agents/claude-code/cli/cli-reference",
-                  "agents/claude-code/cli/hooks",
-                  "agents/claude-code/cli/permissions",
-                  "agents/claude-code/cli/skills",
-                  "agents/claude-code/cli/subagents",
-                  "agents/claude-code/cli/tools"
+                  {
+                    "group": "CLI",
+                    "pages": [
+                      "reference/agents/claude-code/cli/cli-reference",
+                      "reference/agents/claude-code/cli/permissions",
+                      "reference/agents/claude-code/cli/tools",
+                      "reference/agents/claude-code/cli/hooks",
+                      "reference/agents/claude-code/cli/subagents",
+                      "reference/agents/claude-code/cli/skills"
+                    ]
+                  },
+                  {
+                    "group": "Agent SDK",
+                    "pages": [
+                      "reference/agents/claude-code/agent-sdk/overview",
+                      "reference/agents/claude-code/agent-sdk/quickstart",
+                      "reference/agents/claude-code/agent-sdk/agent-loop",
+                      "reference/agents/claude-code/agent-sdk/headless",
+                      "reference/agents/claude-code/agent-sdk/core-concepts/sessions",
+                      "reference/agents/claude-code/agent-sdk/core-concepts/claude-code-features",
+                      "reference/agents/claude-code/agent-sdk/sdk-references/typescript"
+                    ]
+                  },
+                  {
+                    "group": "Agent SDK guides",
+                    "pages": [
+                      "reference/agents/claude-code/agent-sdk/guides/streaming-vs-single-mode",
+                      "reference/agents/claude-code/agent-sdk/guides/streaming-output",
+                      "reference/agents/claude-code/agent-sdk/guides/structured-output",
+                      "reference/agents/claude-code/agent-sdk/guides/permissions",
+                      "reference/agents/claude-code/agent-sdk/guides/user-input",
+                      "reference/agents/claude-code/agent-sdk/guides/secure-deployment",
+                      "reference/agents/claude-code/agent-sdk/guides/hosting",
+                      "reference/agents/claude-code/agent-sdk/guides/mcp",
+                      "reference/agents/claude-code/agent-sdk/guides/custom-tools",
+                      "reference/agents/claude-code/agent-sdk/guides/tool-search",
+                      "reference/agents/claude-code/agent-sdk/guides/subagents",
+                      "reference/agents/claude-code/agent-sdk/guides/skills",
+                      "reference/agents/claude-code/agent-sdk/guides/slash-commands",
+                      "reference/agents/claude-code/agent-sdk/guides/plugins",
+                      "reference/agents/claude-code/agent-sdk/guides/hooks",
+                      "reference/agents/claude-code/agent-sdk/guides/modifying-system-prompts",
+                      "reference/agents/claude-code/agent-sdk/guides/todo-tracking",
+                      "reference/agents/claude-code/agent-sdk/guides/cost-tracking",
+                      "reference/agents/claude-code/agent-sdk/guides/file-checkpointing"
+                    ]
+                  }
                 ]
               },
               {
-                "group": "Agent SDK",
+                "group": "GitHub Copilot CLI",
                 "pages": [
-                  "agents/claude-code/agent-sdk/overview",
-                  "agents/claude-code/agent-sdk/quickstart",
-                  "agents/claude-code/agent-sdk/agent-loop",
-                  "agents/claude-code/agent-sdk/headless",
-                  "agents/claude-code/agent-sdk/core-concepts/sessions",
-                  "agents/claude-code/agent-sdk/core-concepts/claude-code-features",
-                  "agents/claude-code/agent-sdk/sdk-references/typescript"
+                  "reference/agents/copilot-cli/usage",
+                  "reference/agents/copilot-cli/sdk",
+                  "reference/agents/copilot-cli/hooks",
+                  "reference/agents/copilot-cli/subagents",
+                  "reference/agents/copilot-cli/skills"
                 ]
               },
               {
-                "group": "Agent SDK guides",
+                "group": "OpenCode",
                 "pages": [
-                  "agents/claude-code/agent-sdk/guides/streaming-vs-single-mode",
-                  "agents/claude-code/agent-sdk/guides/streaming-output",
-                  "agents/claude-code/agent-sdk/guides/permissions",
-                  "agents/claude-code/agent-sdk/guides/secure-deployment",
-                  "agents/claude-code/agent-sdk/guides/hosting",
-                  "agents/claude-code/agent-sdk/guides/mcp",
-                  "agents/claude-code/agent-sdk/guides/custom-tools",
-                  "agents/claude-code/agent-sdk/guides/tool-search",
-                  "agents/claude-code/agent-sdk/guides/subagents",
-                  "agents/claude-code/agent-sdk/guides/skills",
-                  "agents/claude-code/agent-sdk/guides/slash-commands",
-                  "agents/claude-code/agent-sdk/guides/plugins",
-                  "agents/claude-code/agent-sdk/guides/hooks",
-                  "agents/claude-code/agent-sdk/guides/modifying-system-prompts",
-                  "agents/claude-code/agent-sdk/guides/structured-output",
-                  "agents/claude-code/agent-sdk/guides/user-input",
-                  "agents/claude-code/agent-sdk/guides/todo-tracking",
-                  "agents/claude-code/agent-sdk/guides/cost-tracking",
-                  "agents/claude-code/agent-sdk/guides/file-checkpointing"
+                  "reference/agents/opencode/server",
+                  "reference/agents/opencode/sdk"
                 ]
               }
-            ]
-          },
-          {
-            "group": "GitHub Copilot CLI",
-            "pages": [
-              "agents/copilot-cli/usage",
-              "agents/copilot-cli/sdk",
-              "agents/copilot-cli/hooks",
-              "agents/copilot-cli/skills",
-              "agents/copilot-cli/subagents"
-            ]
-          },
-          {
-            "group": "OpenCode",
-            "pages": [
-              "agents/opencode/server",
-              "agents/opencode/sdk"
             ]
           }
         ]
       },
       {
-        "tab": "Atomic reference",
-        "groups": [
-          {
-            "group": "Start here",
-            "pages": [
-              "introduction",
-              "getting-started/quickstart",
-              "getting-started/using-atomic",
-              "getting-started/configuration"
-            ]
-          },
-          {
-            "group": "Core concepts",
-            "pages": [
-              "core-concepts/architecture",
-              "reference/providers",
-              "reference/settings",
-              "reference/keybindings",
-              "reference/sessions",
-              "reference/compaction"
-            ]
-          },
-          {
-            "group": "Workflow orchestration",
-            "pages": [
-              "workflows/overview",
-              "workflows/authoring",
-              "workflows/built-ins",
-              "workflows/workflow-reference"
-            ]
-          },
-          {
-            "group": "Subagents",
-            "pages": [
-              "subagents/guide",
-              "subagents/overview",
-              "customization/intercom"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "customization/extensions",
-              "customization/skills",
-              "customization/prompt-templates",
-              "customization/themes",
-              "customization/packages"
-            ]
-          },
-          {
-            "group": "Tools and integrations",
-            "pages": [
-              "customization/mcp",
-              "customization/web-access",
-              "customization/custom-models",
-              "customization/custom-providers"
-            ]
-          },
-          {
-            "group": "Programmatic usage",
-            "pages": [
-              "reference/sdk",
-              "reference/rpc",
-              "reference/json-event-stream",
-              "reference/tui-components"
-            ]
-          },
-          {
-            "group": "Data formats",
-            "pages": [
-              "reference/session-format"
-            ]
-          },
-          {
-            "group": "Examples",
-            "pages": [
-              "examples/index"
-            ]
-          },
-          {
-            "group": "Platform",
-            "pages": [
-              "platform/terminal-setup",
-              "platform/tmux",
-              "platform/windows",
-              "platform/termux",
-              "platform/shell-aliases"
-            ]
-          }
-        ]
+        "tab": "GitHub",
+        "href": "https://github.com/flora131/atomic",
+        "icon": "github"
+      },
+      {
+        "tab": "DeepWiki",
+        "href": "https://deepwiki.com/flora131/atomic",
+        "icon": "book-open-cover"
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "GitHub",
-          "href": "https://github.com/flora131/atomic",
-          "icon": "github"
-        },
-        {
-          "anchor": "DeepWiki",
-          "href": "https://deepwiki.com/flora131/atomic",
-          "icon": "book-open-cover"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light.svg",
@@ -292,7 +285,7 @@
     "primary": {
       "type": "button",
       "label": "Get started",
-      "href": "/installation"
+      "href": "/get-started/quickstart"
     }
   },
   "contextual": {
@@ -310,6 +303,425 @@
   "footer": {
     "socials": {
       "github": "https://github.com/flora131/atomic"
+    }
+  },
+  "redirects": [
+    {
+      "source": "/get-started",
+      "destination": "/get-started/introduction"
+    },
+    {
+      "source": "/build",
+      "destination": "/build/workflows/overview"
+    },
+    {
+      "source": "/sdk",
+      "destination": "/sdk/overview"
+    },
+    {
+      "source": "/reference",
+      "destination": "/reference/cli/commands"
+    },
+    {
+      "source": "/",
+      "destination": "/get-started/introduction"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/agent-loop",
+      "destination": "/reference/agents/claude-code/agent-sdk/agent-loop"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/core-concepts/claude-code-features",
+      "destination": "/reference/agents/claude-code/agent-sdk/core-concepts/claude-code-features"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/core-concepts/sessions",
+      "destination": "/reference/agents/claude-code/agent-sdk/core-concepts/sessions"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/cost-tracking",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/cost-tracking"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/custom-tools",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/custom-tools"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/file-checkpointing",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/file-checkpointing"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/hooks",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/hooks"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/hosting",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/hosting"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/mcp",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/mcp"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/modifying-system-prompts",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/modifying-system-prompts"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/permissions",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/permissions"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/plugins",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/plugins"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/secure-deployment",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/secure-deployment"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/skills",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/skills"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/slash-commands",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/slash-commands"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/streaming-output",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/streaming-output"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/streaming-vs-single-mode",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/streaming-vs-single-mode"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/structured-output",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/structured-output"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/subagents",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/subagents"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/todo-tracking",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/todo-tracking"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/tool-search",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/tool-search"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/guides/user-input",
+      "destination": "/reference/agents/claude-code/agent-sdk/guides/user-input"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/headless",
+      "destination": "/reference/agents/claude-code/agent-sdk/headless"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/overview",
+      "destination": "/reference/agents/claude-code/agent-sdk/overview"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/quickstart",
+      "destination": "/reference/agents/claude-code/agent-sdk/quickstart"
+    },
+    {
+      "source": "/agents/claude-code/agent-sdk/sdk-references/typescript",
+      "destination": "/reference/agents/claude-code/agent-sdk/sdk-references/typescript"
+    },
+    {
+      "source": "/agents/claude-code/cli/cli-reference",
+      "destination": "/reference/agents/claude-code/cli/cli-reference"
+    },
+    {
+      "source": "/agents/claude-code/cli/hooks",
+      "destination": "/reference/agents/claude-code/cli/hooks"
+    },
+    {
+      "source": "/agents/claude-code/cli/permissions",
+      "destination": "/reference/agents/claude-code/cli/permissions"
+    },
+    {
+      "source": "/agents/claude-code/cli/skills",
+      "destination": "/reference/agents/claude-code/cli/skills"
+    },
+    {
+      "source": "/agents/claude-code/cli/subagents",
+      "destination": "/reference/agents/claude-code/cli/subagents"
+    },
+    {
+      "source": "/agents/claude-code/cli/tools",
+      "destination": "/reference/agents/claude-code/cli/tools"
+    },
+    {
+      "source": "/agents/copilot-cli/hooks",
+      "destination": "/reference/agents/copilot-cli/hooks"
+    },
+    {
+      "source": "/agents/copilot-cli/sdk",
+      "destination": "/reference/agents/copilot-cli/sdk"
+    },
+    {
+      "source": "/agents/copilot-cli/skills",
+      "destination": "/reference/agents/copilot-cli/skills"
+    },
+    {
+      "source": "/agents/copilot-cli/subagents",
+      "destination": "/reference/agents/copilot-cli/subagents"
+    },
+    {
+      "source": "/agents/copilot-cli/usage",
+      "destination": "/reference/agents/copilot-cli/usage"
+    },
+    {
+      "source": "/agents/opencode/sdk",
+      "destination": "/reference/agents/opencode/sdk"
+    },
+    {
+      "source": "/agents/opencode/server",
+      "destination": "/reference/agents/opencode/server"
+    },
+    {
+      "source": "/cli/commands",
+      "destination": "/reference/cli/commands"
+    },
+    {
+      "source": "/cli/context-files",
+      "destination": "/reference/cli/context-files"
+    },
+    {
+      "source": "/concepts/agents",
+      "destination": "/get-started/concepts/agents"
+    },
+    {
+      "source": "/concepts/cli-vs-sdk",
+      "destination": "/get-started/concepts/cli-vs-sdk"
+    },
+    {
+      "source": "/concepts/permissions",
+      "destination": "/get-started/concepts/permissions"
+    },
+    {
+      "source": "/concepts/sessions",
+      "destination": "/get-started/concepts/sessions"
+    },
+    {
+      "source": "/concepts/skills",
+      "destination": "/get-started/concepts/skills"
+    },
+    {
+      "source": "/concepts/sub-agents",
+      "destination": "/get-started/concepts/subagents"
+    },
+    {
+      "source": "/concepts/why-atomic",
+      "destination": "/get-started/concepts/why-atomic"
+    },
+    {
+      "source": "/concepts/workflows",
+      "destination": "/get-started/concepts/workflows"
+    },
+    {
+      "source": "/configuration/agent-files",
+      "destination": "/build/configuration/agent-files"
+    },
+    {
+      "source": "/configuration/ci",
+      "destination": "/build/configuration/ci"
+    },
+    {
+      "source": "/configuration/settings",
+      "destination": "/build/configuration/settings"
+    },
+    {
+      "source": "/core-concepts/architecture",
+      "destination": "/get-started/architecture"
+    },
+    {
+      "source": "/customization/custom-models",
+      "destination": "/build/integrations/custom-models"
+    },
+    {
+      "source": "/customization/custom-providers",
+      "destination": "/build/integrations/custom-providers"
+    },
+    {
+      "source": "/customization/extensions",
+      "destination": "/build/extend/extensions"
+    },
+    {
+      "source": "/customization/intercom",
+      "destination": "/build/integrations/intercom"
+    },
+    {
+      "source": "/customization/mcp",
+      "destination": "/build/integrations/mcp"
+    },
+    {
+      "source": "/customization/packages",
+      "destination": "/build/extend/packages"
+    },
+    {
+      "source": "/customization/prompt-templates",
+      "destination": "/build/extend/prompt-templates"
+    },
+    {
+      "source": "/customization/skills",
+      "destination": "/build/skills"
+    },
+    {
+      "source": "/customization/themes",
+      "destination": "/build/extend/themes"
+    },
+    {
+      "source": "/customization/web-access",
+      "destination": "/build/integrations/web-access"
+    },
+    {
+      "source": "/examples/index",
+      "destination": "/build/examples"
+    },
+    {
+      "source": "/faq",
+      "destination": "/get-started/faq"
+    },
+    {
+      "source": "/getting-started/configuration",
+      "destination": "/get-started/configuration"
+    },
+    {
+      "source": "/getting-started/quickstart",
+      "destination": "/get-started/quickstart"
+    },
+    {
+      "source": "/getting-started/using-atomic",
+      "destination": "/get-started/using-atomic"
+    },
+    {
+      "source": "/index",
+      "destination": "/get-started/introduction"
+    },
+    {
+      "source": "/installation",
+      "destination": "/get-started/installation"
+    },
+    {
+      "source": "/introduction",
+      "destination": "/get-started/introduction"
+    },
+    {
+      "source": "/platform/shell-aliases",
+      "destination": "/build/platform/shell-aliases"
+    },
+    {
+      "source": "/platform/terminal-setup",
+      "destination": "/build/platform/terminal-setup"
+    },
+    {
+      "source": "/platform/termux",
+      "destination": "/build/platform/termux"
+    },
+    {
+      "source": "/platform/tmux",
+      "destination": "/build/platform/tmux"
+    },
+    {
+      "source": "/platform/windows",
+      "destination": "/build/platform/windows"
+    },
+    {
+      "source": "/quickstart",
+      "destination": "/get-started/quickstart"
+    },
+    {
+      "source": "/reference/compaction",
+      "destination": "/reference/runtime/compaction"
+    },
+    {
+      "source": "/reference/json-event-stream",
+      "destination": "/reference/runtime/json-event-stream"
+    },
+    {
+      "source": "/reference/keybindings",
+      "destination": "/reference/cli/keybindings"
+    },
+    {
+      "source": "/reference/providers",
+      "destination": "/build/configuration/providers"
+    },
+    {
+      "source": "/reference/rpc",
+      "destination": "/reference/runtime/rpc"
+    },
+    {
+      "source": "/reference/sdk",
+      "destination": "/reference/workflows/sdk"
+    },
+    {
+      "source": "/reference/session-format",
+      "destination": "/reference/runtime/session-format"
+    },
+    {
+      "source": "/reference/sessions",
+      "destination": "/reference/runtime/sessions"
+    },
+    {
+      "source": "/reference/settings",
+      "destination": "/reference/cli/settings"
+    },
+    {
+      "source": "/reference/tui-components",
+      "destination": "/reference/tui/components"
+    },
+    {
+      "source": "/subagents/guide",
+      "destination": "/build/subagents/guide"
+    },
+    {
+      "source": "/subagents/overview",
+      "destination": "/build/subagents/reference"
+    },
+    {
+      "source": "/troubleshooting",
+      "destination": "/get-started/troubleshooting"
+    },
+    {
+      "source": "/workflows/authoring",
+      "destination": "/build/workflows/authoring"
+    },
+    {
+      "source": "/workflows/building",
+      "destination": "/build/workflows/building"
+    },
+    {
+      "source": "/workflows/built-in",
+      "destination": "/build/workflows/built-ins"
+    },
+    {
+      "source": "/workflows/built-ins",
+      "destination": "/build/workflows/built-ins"
+    },
+    {
+      "source": "/workflows/overview",
+      "destination": "/build/workflows/overview"
+    },
+    {
+      "source": "/workflows/registering",
+      "destination": "/build/workflows/registering"
+    },
+    {
+      "source": "/workflows/running",
+      "destination": "/build/workflows/running"
+    },
+    {
+      "source": "/workflows/workflow-reference",
+      "destination": "/reference/workflows/sdk-runtime"
+    }
+  ],
+  "errors": {
+    "404": {
+      "redirect": false
     }
   }
 }

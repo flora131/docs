@@ -1,0 +1,191 @@
+---
+title: "CLI commands"
+description: "Every atomic subcommand — chat, workflow, session, completions, update, uninstall."
+icon: "terminal"
+---
+
+## Overview
+
+| Command | Description |
+| --- | --- |
+| `atomic chat` | Spawn the native agent CLI inside a tmux session. |
+| `atomic workflow` | Run a named workflow (or open the picker). |
+| `atomic workflow list` | List available workflows, grouped by source. |
+| `atomic workflow refresh` | Reload custom workflows from `settings.json` and report loaded + broken entries. |
+| `atomic workflow read` | Print the on-disk path for a workflow run or single stage. |
+| `atomic workflow status [<id>]` | Query workflow state. |
+| `atomic workflow inputs <name> -a <agent>` | Print a workflow's declared input schema as JSON. |
+| `atomic session list` | List all running sessions on the atomic socket. |
+| `atomic session connect [name]` | Attach to a session (interactive picker when no name). |
+| `atomic session kill [name]` | Kill one session, or pick sessions interactively. |
+| `atomic completions <shell>` | Output a shell completion script. |
+| `atomic config set <k> <v>` | Set configuration values (`telemetry`, `scm`). |
+| `atomic update [--check]` | Self-update the standalone binary. |
+| `atomic uninstall [--purge]` | Remove the standalone binary; `--purge` also wipes `~/.atomic`. |
+
+## Global flags
+
+| Flag | Description |
+| --- | --- |
+| `-y, --yes` | Auto-confirm all prompts (non-interactive). |
+| `--no-banner` | Skip the ASCII banner. |
+| `-v, --version` | Show version number. |
+
+## `atomic chat`
+
+Spawns the native agent CLI inside a tmux session on the atomic socket.
+
+| Flag | Description |
+| --- | --- |
+| `-a, --agent <name>` | `claude`, `opencode`, or `copilot`. |
+
+All other arguments are forwarded directly to the agent CLI:
+
+```bash
+atomic chat -a claude "fix the bug"          # initial prompt
+atomic chat -a copilot --model gpt-5.4       # custom model — forwarded to copilot
+atomic chat -a claude --verbose              # --verbose forwarded to claude
+```
+
+There is no Atomic-owned TUI in chat — streaming, slash commands, model selection, theme, and shortcuts come from the agent CLI itself. Atomic handles config sync, session management, and argument passthrough.
+
+## `atomic workflow`
+
+Run a multi-session workflow with the Atomic workflow panel.
+
+| Flag | Description |
+| --- | --- |
+| `-n, --name <name>` | Workflow name. Required for direct runs; omit only for the interactive picker. |
+| `-a, --agent <name>` | `claude`, `opencode`, or `copilot`. |
+| `-d, --detach` | Start in the background — returns immediately with the session name. |
+| `--<field>=<value>` | Structured input for workflows that declare an `inputs` schema. |
+| `[prompt...]` | Positional prompt — requires the workflow to declare a `prompt` input. |
+
+Five invocation shapes:
+
+```bash
+# 1. List every workflow available, grouped by source
+atomic workflow list
+atomic workflow list -a claude
+
+# 2. Interactive picker — fuzzy-search, fill the form, confirm with y/n
+atomic workflow -a claude
+
+# 3. Run with a positional prompt
+atomic workflow -n ralph -a claude "build a REST API for user management"
+
+# 4. Run a structured-input workflow with one --<field> flag per declared input
+atomic workflow -n open-claude-design -a claude \
+  --prompt="a dashboard for monitoring API latency" \
+  --output-type=prototype
+
+# 5. Run detached — attach later with `atomic workflow session connect`
+atomic workflow -n ralph -a claude -d "build the auth module"
+```
+
+See [running workflows](/build/workflows/running) for input precedence, attaching, and reading run artifacts.
+
+## `atomic session`
+
+Available scoped under `chat` and `workflow`, or unscoped for all sessions:
+
+| Command | Description |
+| --- | --- |
+| `atomic session list` | All running sessions. |
+| `atomic session connect [name]` | Attach (interactive picker when no name given). |
+| `atomic session kill [name]` | Kill one session, or pick sessions interactively. |
+| `atomic chat session …` | Scoped to chat sessions. |
+| `atomic workflow session …` | Scoped to workflow sessions. |
+
+All three accept `-a <agent>` (repeatable) to filter by agent. `kill` confirms before terminating unless `-y` / `--yes` is passed; pass `--all` to skip the picker and preselect every matching session.
+
+```bash
+atomic session list -a claude                # only Claude sessions
+atomic session connect my-session            # attach by name
+atomic session connect                       # interactive picker
+atomic chat session list -a copilot          # chat sessions for Copilot only
+atomic session kill --all --yes              # kill everything without prompts
+atomic workflow session kill -a claude       # checkbox picker for Claude workflow sessions
+```
+
+See [sessions](/get-started/concepts/sessions) for naming conventions and detach semantics.
+
+## `atomic workflow read`
+
+Print the on-disk path under `~/.atomic/sessions/<runId>/` for a workflow run or a single stage:
+
+```bash
+# Run-level
+atomic workflow read --sessionId atomic-wf-claude-pr-review-a1b2c3d4
+
+# Stage-level
+atomic workflow read --sessionId atomic-wf-claude-pr-review-a1b2c3d4 --stageId review
+```
+
+The directory contains `messages.json`, `inbox.md`, and `status.json` — see [running workflows](/build/workflows/running#reading-run-artifacts).
+
+## `atomic workflow refresh`
+
+Reload custom workflows from `settings.json` and report loaded + broken entries with field-by-field diagnostics. Auto-defaults to JSON inside an `atomic chat` session. See [registering workflows](/build/workflows/registering).
+
+## `atomic completions`
+
+Atomic ships tab-completion for **bash**, **zsh**, **fish**, and **PowerShell**. Cache the script once so new shells don't re-spawn the atomic binary on startup. The bootstrap installer (`install.sh` / `install.ps1` / `install.cmd`) sets this up automatically.
+
+<CodeGroup>
+
+```bash Bash
+mkdir -p ~/.atomic/completions
+atomic completions bash > ~/.atomic/completions/atomic.bash
+echo '[ -f "$HOME/.atomic/completions/atomic.bash" ] && source "$HOME/.atomic/completions/atomic.bash"' >> ~/.bashrc
+```
+
+```zsh Zsh
+mkdir -p ~/.atomic/completions
+atomic completions zsh > ~/.atomic/completions/atomic.zsh
+echo '[ -f "$HOME/.atomic/completions/atomic.zsh" ] && source "$HOME/.atomic/completions/atomic.zsh"' >> ~/.zshrc
+```
+
+```fish Fish
+atomic completions fish > ~/.config/fish/completions/atomic.fish
+```
+
+```powershell PowerShell
+$cache = Join-Path $HOME '.atomic\completions\atomic.ps1'
+New-Item -ItemType Directory -Force -Path (Split-Path $cache) | Out-Null
+atomic completions powershell | Out-File -FilePath $cache -Encoding utf8
+Add-Content $PROFILE "`nif (Test-Path `"$cache`") { . `"$cache`" }"
+```
+
+</CodeGroup>
+
+## `atomic config set`
+
+Set configuration values. Currently supports `telemetry` and `scm`:
+
+```bash
+atomic config set scm github         # github | azure-devops | sapling
+atomic config set telemetry false
+```
+
+`scm` reconciles the GitHub / Azure DevOps MCP servers in agent configs on startup — see [agent files](/build/configuration/agent-files).
+
+## `atomic update`
+
+```bash
+atomic update --check   # show current + latest version and the right update command
+atomic update           # standalone-binary installs only
+```
+
+For npm installs, the command prints the matching `<pm> update -g` hint instead of running it. See [installation](/get-started/installation#updating).
+
+## `atomic uninstall`
+
+Removes the standalone binary, PATH entries, and shell completions. Refuses on PM-managed installs and points at the right `<pm> remove -g` command.
+
+```bash
+atomic uninstall          # remove the binary and shell hooks
+atomic uninstall --purge  # also wipe ~/.atomic
+```
+
+See [installation](/get-started/installation#uninstalling) for full removal steps.

@@ -1,0 +1,113 @@
+---
+title: "Running workflows"
+description: "List, pick, pass inputs, detach, attach, and read run artifacts."
+icon: "play"
+---
+
+## List
+
+```bash
+atomic workflow list                 # everything, grouped by source
+atomic workflow list -a claude       # filter by agent
+```
+
+Output groups workflows by source: built-ins first, then your registered custom workflows. Any broken entries (failed to load) appear in a trailing "skipped" section with the reason — see [registering workflows](/build/workflows/registering#broken-entries).
+
+## Interactive picker
+
+Omit `-n` to launch the picker — fuzzy-search workflows, fill the input form, confirm with `y/n`:
+
+```bash
+atomic workflow -a claude
+```
+
+The picker renders each workflow's declared `inputs` schema as a form, so you get the same validation as the CLI flags.
+
+## Run with a prompt
+
+If a workflow declares a `prompt` input, you can pass it positionally:
+
+```bash
+atomic workflow -n ralph -a claude "Build a REST API for user management"
+```
+
+## Run with structured inputs
+
+Workflows that declare an `inputs` schema get one `--<field>=<value>` flag per declared input, with required-field, enum-membership, and unknown-flag validation:
+
+```bash
+atomic workflow -n open-claude-design -a claude \
+  --prompt="a dashboard for monitoring API latency" \
+  --output-type=prototype
+```
+
+To inspect a workflow's declared schema:
+
+```bash
+atomic workflow inputs open-claude-design -a claude
+```
+
+## Input precedence
+
+`runWorkflow` (used by the `atomic` CLI and by your own composition root) applies inputs in this order:
+
+1. `defineWorkflow` default values (on each `WorkflowInput`) when no value is provided.
+2. The first declared enum value when `required: true` and no value is provided.
+3. Whatever you pass in `inputs` (CLI flags, picker form, programmatic call).
+
+CLI flags compose entirely at the calling-CLI layer — the SDK only sees the final `inputs` map.
+
+## Detach and attach
+
+`-d` / `--detach` starts the workflow in the background. It returns immediately and prints the session name; attach later from any shell.
+
+```bash
+atomic workflow -n ralph -a claude -d "build the auth module"
+# atomic-wf-claude-ralph-a1b2c3d4
+
+atomic workflow session connect atomic-wf-claude-ralph-a1b2c3d4
+```
+
+Detached mode is what you want for scripted / CI automation and long-running tasks. See [sessions](/get-started/concepts/sessions).
+
+## Workflow status
+
+```bash
+atomic workflow status                                # all workflow sessions
+atomic workflow status atomic-wf-claude-ralph-a1b2c3d4
+```
+
+Reports the run's current state: `in_progress`, `awaiting_input`, `needs_review`, `completed`, or `error`.
+
+## Reading run artifacts
+
+Every stage writes its messages, transcript, and metadata to disk under `~/.atomic/sessions/<runId>/`. Use `atomic workflow read` to discover the on-disk path:
+
+```bash
+# Run-level: discover stages + run-level files
+atomic workflow read --sessionId atomic-wf-claude-pr-review-a1b2c3d4
+
+# Stage-level: locate a single stage's saved artifacts
+atomic workflow read --sessionId atomic-wf-claude-pr-review-a1b2c3d4 --stageId review
+```
+
+The path points at `~/.atomic/sessions/<runId>/[<stageName>-<sessionId>/]`. Read `messages.json` (raw `s.save()` output), `inbox.md` (human-readable transcript), or `status.json` (live panel snapshot) directly from there.
+
+## All `atomic workflow` flags
+
+| Flag | Description |
+| --- | --- |
+| `-n, --name <name>` | Workflow name. Required for direct runs; omit only for the interactive picker. |
+| `-a, --agent <name>` | Agent: `claude`, `opencode`, `copilot`. |
+| `-d, --detach` | Start the workflow in the background without attaching. Attach later with `atomic workflow session connect <name>`. |
+| `--<field>=<value>` | Structured input for workflows that declare an `inputs` schema (also accepts `--<field> <value>`). |
+| `[prompt...]` | Positional prompt — requires the workflow to declare a `prompt` input. |
+
+<Columns cols={2}>
+  <Card title="Built-in workflows" icon="boxes-stacked" href="/build/workflows/built-ins">
+    `ralph`, `deep-research-codebase`, `open-claude-design`.
+  </Card>
+  <Card title="Registering workflows" icon="bookmark" href="/build/workflows/registering">
+    Make your own workflows discoverable through `atomic workflow`.
+  </Card>
+</Columns>
