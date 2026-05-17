@@ -1,0 +1,112 @@
+---
+title: Built-in workflows
+description: "A practical guide to the workflows bundled with Atomic: deep-research-codebase, ralph, and open-claude-design."
+---
+
+# Built-in workflows
+
+Atomic ships built-in workflows for common high-value engineering and design tasks. Use `/workflow list` to see what is installed in your environment and `/workflow inputs <name>` to inspect the exact input schema.
+
+## `deep-research-codebase`
+
+Use this when you need a durable understanding of a large or unfamiliar area of a codebase.
+
+It is designed to:
+
+- fan out research across files, patterns, and prior docs
+- write a dated research document under `research/docs/`
+- produce context future agents and humans can reuse
+- avoid implementation until the codebase is understood
+
+Example:
+
+```text
+/workflow deep-research-codebase prompt="Map every callsite and data path for legacy auth middleware before we migrate to session-v2"
+```
+
+Good prompts include:
+
+- the feature or subsystem name
+- why the research is needed
+- what decisions the output should support
+- any known entry points or files
+- explicit non-goals
+
+## `ralph`
+
+`ralph` is an autonomous coding workflow inspired by the Ralph Wiggum method: plan, implement, simplify, review, and iterate until review agreement or a configured loop limit.
+
+Use it for bounded implementation tasks where the repository already has enough tests or validation signals.
+
+Example:
+
+```text
+/workflow ralph prompt="Implement the caching layer described in specs/cache.md and validate with the existing cache tests" max_loops=3
+```
+
+Best suited for:
+
+- self-contained fixes
+- implementation from an approved spec
+- refactors with clear tests
+- repetitive codebase-wide updates with a known validation command
+
+Avoid using it for:
+
+- ambiguous product decisions
+- tasks that require credentials or production access
+- destructive operations without a human approval gate
+- broad architecture changes that have not been scoped
+
+## `open-claude-design`
+
+`open-claude-design` helps produce design output from a prompt, reference image, or existing design system.
+
+Example:
+
+```text
+/workflow open-claude-design prompt="Create a settings page for team notification preferences" reference=./mocks/settings.png output_type=prototype
+```
+
+Use it for:
+
+- product UI exploration
+- design-system-aware prototypes
+- visual handoff directories
+- iterating on prompt + reference combinations
+
+## Inspecting inputs
+
+Always check the installed schema before relying on a workflow in automation:
+
+```text
+/workflow inputs deep-research-codebase
+/workflow inputs ralph
+/workflow inputs open-claude-design
+```
+
+Input names and defaults may evolve as the workflow package changes.
+
+## Operational guidance
+
+<Warning>
+  Built-in workflows can launch long-running agent work. Run implementation workflows inside a devcontainer, VM, or remote development environment when they may edit code or run commands unattended.
+</Warning>
+
+Recommended practice:
+
+1. Run research first for unfamiliar code.
+2. Review the generated plan or research artifact.
+3. Run implementation with clear validation instructions.
+4. Inspect the diff yourself.
+5. Run focused tests before merging.
+
+## Creating your own built-in-like workflow
+
+If your team repeats a workflow often, encode it:
+
+```text
+Use the workflow skill to create a project workflow equivalent to ralph, but require a human approval after the planning stage and before the first edit.
+```
+
+Then commit the workflow file and document its required inputs in your repo.
